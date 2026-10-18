@@ -42,7 +42,7 @@ public final class PracticeCoordinator {
     }
 
     public func requestCapture() throws {
-        try session.sendTouch(.longPress, elapsedMs: 0)
+        try session.captureNow(.phone, quality: 90)
     }
 
     public func commitManualQuad(_ quad: PaperQuad) throws {

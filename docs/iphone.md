@@ -49,4 +49,4 @@ API キーとアカウントは Keychain に置く。CloudKit や Firebase は�
 
 文字入力、用紙の選択、手本一覧、撮影ボタンは SwiftUI 側だけに出す。グラスにキーボードは出さない。
 
-撮影ボタンは `TouchAction.longPress` と同じ `TOUCH` を Touch characteristic へ書く。テンプルの長押しを OS が取っても、iPhone のボタンが撮影の正になる。
+撮影ボタンは Command へ `CAPTURE_NOW`（理由は電話、JPEG 品質 90）を書く。テンプルの長押しは Touch の `LONG_PRESS` のまま。

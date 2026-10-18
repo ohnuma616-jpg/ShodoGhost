@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 8 まででリポジトリにあるもの:
+Phase 9 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -62,6 +62,7 @@ shodo-ghost/
 iPhone 側:
 
 ```text
+ios/App/               Xcode アプリ。撮影ボタンが CAPTURE_NOW を送る
 ios/Protocol/          Swift Package。符号器、PhoneSession、練習のバースト
   Sources/.../PhoneSession.swift
   Sources/.../CoreBluetoothPhoneRadio.swift   iOS だけでコンパイル
@@ -90,7 +91,6 @@ glass/
 
 ```text
 MercurySDK          adapter の裏。BaseMirrorActivity はまだ使わない
-ios/App/            Xcode のアプリターゲット。画面本体は ios/Protocol の PracticeScreen
 server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
 ```
 
@@ -103,10 +103,11 @@ server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ば�
 | 1 | 済み | 契約、シーケンス、見直し、Kotlin と Swift の符号器 |
 | 2 | 済み | `GlassSession` と `PhoneSession`。TCP ループバックで往復。Android GATT モジュールは未作成 |
 | 3 | 済み | 640×480 の HUD と `PracticeHud`。Android の Activity は未作成 |
-| 4 | 済み | 前面の練習画面、JPEG バースト、`ManualCritique`。Xcode アプリと `NWListener` は未作成 |
+| 4 | 済み | 前面の練習画面、JPEG バースト、`ManualCritique`。`NWListener` は未作成 |
 | 5 | 済み | スリープで Wi-Fi を放す。再接続で JPEG 1 枚と手本を戻す。mAh は未計測 |
 | 6 | 済み | カメラ 0 を1枚だけ開き、閉じてから `CAPTURE_READY` |
 | 7 | 済み | 1280×480 の Activity。起動 4 秒後に 1 枚撮って閉じる |
-| 8 | ここ | `ShodoGhost` を広告し、`CAPTURE_NOW` で 1 枚撮る。Xcode アプリは未作成 |
+| 8 | 済み | `ShodoGhost` を広告し、`CAPTURE_NOW` で 1 枚撮る |
+| 9 | ここ | `ios/App`。接続して撮影ボタンが `CAPTURE_NOW` を送る |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。
