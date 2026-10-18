@@ -67,7 +67,7 @@ RayNeo 公式資料（X3 Pro、2025年の開発者ドキュメント）に合わ
 - Snapdragon AR1 Gen 1、RayNeo AIOS。接続した X3 Pro（ARGF20 / MercuryLiteXR）は `ro.build.version.release` 12、`ro.build.version.sdk` 32（Android 12L）
 - 両眼フルカラー MicroLED、回折導波路、FOV 30°、約 3,500 nit（ピーク 6,000）。実機の `wm size` は 1280×480、`wm density` は 160（1dp = 1px）
 - 論理画面は1枚。素の Android UI は左右に割れるので、640×480 を描いて両眼へ複製する。密度 160 なので、dp で組んでも物理ピクセルと一致する
-- メインカメラ Sony IMX681 12MP。空間位置用に別の VGA カメラがある
+- カメラは2台、どちらも背面。4032×3024（焦点距離 1.90mm）が静止画用の 12MP、640×480（焦点距離 0.71mm）が空間用の広角 VGA。静止画は 12MP 側を1枚だけ開き、VGA を `WebCamTexture` で開かない
 - 3マイク、テンプルの前後上下スワイプとタップ、245mAh、Wi-Fi 6、Bluetooth 5.2 / 5.3（資料によって表記が分かれる）
 
 製品ページは Bluetooth 5.3、デバイス紹介表は 5.2 です。この契約が使うのは MTU 交換、Write、Notify までなので、どちらでも成立します。

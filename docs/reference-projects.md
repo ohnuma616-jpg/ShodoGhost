@@ -19,7 +19,7 @@ Shodo Ghost の `renderHud` が 640×480 を1枚作り、`DeskMirrorPresenter` �
 FixLensAR の仕様（`docs/spec.md`、2026-10-13）で実機に寄せて書いてあること:
 
 - 黒 `#000000` は透明。
-- `WebCamTexture` で取れたのは白黒の魚眼で、IMX681 の RGB は未確定。OpenXR と ShareCamera は使っていない。
+- `WebCamTexture` で取れたのは白黒の魚眼。接続した X3 Pro には 4032×3024（焦点距離 1.90mm）と 640×480（焦点距離 0.71mm）があり、どちらも背面。魚眼は VGA 側と一致する。12MP 側のカメラ ID は、このダンプではまだ割り当てていない。OpenXR と ShareCamera は使っていない。
 - `SpeechRecognizer` はウェイクワード専用で、手順の音声コマンドには使えなかった。オンデバイスの Vosk を使っている。
 - ジャイロ積分の枠はドリフトし、平行移動には追従しない。空間固定は別 APK で、現行ビルドには OpenXR を入れない。
 
