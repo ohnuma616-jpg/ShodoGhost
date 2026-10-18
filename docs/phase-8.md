@@ -1,6 +1,6 @@
 # Phase 8 — BLE で撮影
 
-グラスは Activity が表示されているあいだ `ShodoGhost` を広告する。パケットは Service UUID だけ、名前はスキャンレスポンス。Command、Touch、Payload、SessionInfo は暗号化が必要で、ボンドが済むまで `GlassSession` は書き込みを捨てる。MTU が 185 未満の通知は無視する。iPhone は接続時にその交換を行う。
+グラスは Activity が生きているあいだ `ShodoGhost` を広告する。緑の行に「広告中」と出る。一時的に画面が止まっても広告は続ける。パケットは Service UUID だけ、名前はスキャンレスポンス。Command、Touch、Payload、SessionInfo は暗号化が必要で、ボンドが済むまで `GlassSession` は書き込みを捨てる。MTU が 185 未満の通知は無視する。iPhone は接続時にその交換を行う。
 
 `CAPTURE_NOW` のリスナは GATT のロックを持ったままカメラを開かない。別スレッドの `GlassStillShot` がカメラ 0 を 1 枚開いて閉じ、`CAPTURE_READY` を Status へ載せる。引き出すための写しは `files/still.jpg`。起動しただけでは撮らない。
 

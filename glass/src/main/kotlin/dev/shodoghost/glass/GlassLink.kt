@@ -40,6 +40,7 @@ class GlassLink(
     private val context: Context,
     private val onCapture: (CaptureNow) -> Unit,
     private val onPhase: (LinkPhase) -> Unit,
+    private val onStatus: (String) -> Unit,
 ) {
     val session: GlassSession
     private val manager = context.getSystemService(BluetoothManager::class.java)
@@ -54,6 +55,7 @@ class GlassLink(
     private var notifyInFlight = false
     private var bondReceiver: BroadcastReceiver? = null
     private var serviceReady = false
+    private var advertising = false
 
     private val radio = object : GlassRadio {
         override fun notifyStatus(frame: ByteArray) {
@@ -81,7 +83,7 @@ class GlassLink(
     fun start() {
         val adapter = manager.adapter
         if (adapter == null || !adapter.isEnabled) {
-            Log.i(TAG, "bluetooth off")
+            onStatus("BLEオフ")
             return
         }
         if (adapter.name != GattProfile.LOCAL_NAME) {
@@ -90,6 +92,10 @@ class GlassLink(
         listenForBond()
         if (server == null) {
             server = manager.openGattServer(context, callback)
+            if (server == null) {
+                onStatus("サーバ不可")
+                return
+            }
             server?.addService(buildService())
         } else if (serviceReady) {
             advertise()
@@ -101,6 +107,7 @@ class GlassLink(
     }
 
     fun stopAdvertising() {
+        advertising = false
         advertiser?.stopAdvertising(advertiseCallback)
     }
 
@@ -166,9 +173,10 @@ class GlassLink(
         val adapter = manager.adapter ?: return
         val next = adapter.bluetoothLeAdvertiser
         if (next == null) {
-            Log.i(TAG, "advertiser missing")
+            onStatus("広告不可")
             return
         }
+        if (advertising) return
         advertiser = next
         val settings = AdvertiseSettings.Builder()
             .setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
@@ -187,11 +195,13 @@ class GlassLink(
 
     private val advertiseCallback = object : AdvertiseCallback() {
         override fun onStartSuccess(settingsInEffect: AdvertiseSettings) {
-            Log.i(TAG, "advertise")
+            advertising = true
+            onStatus("広告中")
         }
 
         override fun onStartFailure(errorCode: Int) {
-            Log.i(TAG, "advertise failed $errorCode")
+            advertising = false
+            onStatus("失敗$errorCode")
         }
     }
 

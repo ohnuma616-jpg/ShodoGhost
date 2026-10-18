@@ -40,17 +40,19 @@ class GlassActivity : Activity() {
             this,
             onCapture = ::capture,
             onPhase = { phase -> runOnUiThread { show(phase) } },
+            onStatus = ::note,
         )
         shot = GlassStillShot(link.session, LegacyStillCapture(AndroidStillCamera()))
-        show(LinkPhase.IDLE)
+        show(LinkPhase.IDLE, advice = listOf("起動"))
         setContentView(view)
     }
 
     override fun onResume() {
         super.onResume()
         val missing = REQUIRED.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
-        if (missing.isEmpty()) link.start()
-        else requestPermissions(missing.toTypedArray(), PERMISSION_REQUEST)
+        val bleReady = BLE.all { checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+        if (bleReady) link.start()
+        if (missing.isNotEmpty()) requestPermissions(missing.toTypedArray(), PERMISSION_REQUEST)
     }
 
     override fun onRequestPermissionsResult(
@@ -67,15 +69,18 @@ class GlassActivity : Activity() {
         }
     }
 
-    override fun onPause() {
-        link.stopAdvertising()
-        super.onPause()
-    }
-
     override fun onDestroy() {
         link.close()
         worker.shutdown()
         super.onDestroy()
+    }
+
+    private fun note(text: String) {
+        runOnUiThread {
+            Log.i(TAG, text)
+            runCatching { File(filesDir, "link.txt").writeText(text) }
+            show(link.session.phase, advice = listOf(text))
+        }
     }
 
     private fun capture(request: CaptureNow) {
@@ -124,6 +129,10 @@ class GlassActivity : Activity() {
         const val TAG = "ShodoGlass"
         const val STILL_NAME = "still.jpg"
         const val PERMISSION_REQUEST = 1
+        val BLE = arrayOf(
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+        )
         val REQUIRED = arrayOf(
             Manifest.permission.CAMERA,
             Manifest.permission.BLUETOOTH_CONNECT,
