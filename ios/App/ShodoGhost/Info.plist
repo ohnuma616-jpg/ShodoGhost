@@ -26,6 +26,8 @@
 	<true/>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>半紙をなぞるあいだ、グラスと接続します。</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>写真を受け取るあいだ、グラスからの接続を許可します。</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>bluetooth-central</string>

@@ -22,6 +22,7 @@ import android.content.IntentFilter
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import dev.shodoghost.protocol.BeginWifiSession
 import dev.shodoghost.protocol.CaptureNow
 import dev.shodoghost.protocol.GattProfile
 import dev.shodoghost.protocol.Limits
@@ -41,6 +42,7 @@ class GlassLink(
     private val onCapture: (CaptureNow) -> Unit,
     private val onPhase: (LinkPhase) -> Unit,
     private val onStatus: (String) -> Unit,
+    private val onWifi: (BeginWifiSession) -> Unit,
 ) {
     val session: GlassSession
     private val manager = context.getSystemService(BluetoothManager::class.java)
@@ -74,6 +76,10 @@ class GlassLink(
             object : GlassListener() {
                 override fun onCaptureRequested(request: CaptureNow) {
                     onCapture(request)
+                }
+
+                override fun onWifiBegin(session: BeginWifiSession) {
+                    onWifi(session)
                 }
             },
         )
@@ -231,6 +237,9 @@ class GlassLink(
                 }
                 session.onLinkDown()
                 publishPhase()
+                advertiser?.stopAdvertising(advertiseCallback)
+                advertising = false
+                advertise()
             }
         }
 

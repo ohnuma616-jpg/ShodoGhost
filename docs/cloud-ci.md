@@ -41,7 +41,7 @@ Windows では次の順にする。
 7. バンドル ID は `dev.shodoghost.iphone` のままにする。Start を押す。
 8. iPhone で、設定 → 一般 → VPN とデバイス管理 → デベロッパ App の自分の Apple ID → 信頼。
 
-画面が「準備完了」になったら「撮影」。グラスは今のアプリのままで、同じ `CAPTURE_NOW` を受け取ります。
+画面が「準備完了」になったら「撮影」。写真を iPhone に出すには、グラス側も Phase 10 の APK に入れ替える。手順は [phase-10.md](phase-10.md)。
 
 無料の Apple ID では、署名は 7 日で切れる。切れたら同じ IPA を Sideloadly でもう一度入れる。同時に入る本数は 3 つまで。パスワードは Sideloadly の入力欄にだけ入れる。
 

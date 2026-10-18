@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import dev.shodoghost.protocol.BeginWifiSession
 import dev.shodoghost.protocol.CaptureNow
 import dev.shodoghost.protocol.LinkPhase
 import dev.shodoghost.protocol.camera.GlassStillShot
@@ -43,6 +44,7 @@ class GlassActivity : Activity() {
             onCapture = ::capture,
             onPhase = { phase -> runOnUiThread { onPhase(phase) } },
             onStatus = ::note,
+            onWifi = ::upload,
         )
         shot = GlassStillShot(link.session, LegacyStillCapture(stillCamera))
         show(LinkPhase.IDLE)
@@ -138,6 +140,30 @@ class GlassActivity : Activity() {
                     show(link.session.phase)
                 }
             }
+        }
+    }
+
+    private fun upload(begin: BeginWifiSession) {
+        worker.execute {
+            val still = shot.retainedStill()
+            if (still == null) {
+                pin("失敗 写真がない")
+                return@execute
+            }
+            note("送信")
+            try {
+                GlassWifi(this).send(link.session, begin, still)
+            } catch (error: Exception) {
+                pin(clip("失敗 ${error.message}"))
+            }
+        }
+    }
+
+    private fun pin(text: String) {
+        runOnUiThread {
+            captureShown = true
+            bottom = text
+            show(link.session.phase)
         }
     }
 

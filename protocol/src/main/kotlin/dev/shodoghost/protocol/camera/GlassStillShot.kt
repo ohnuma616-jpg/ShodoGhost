@@ -20,7 +20,7 @@ class GlassStillShot(
     private val session: GlassSession,
     private val capture: CameraCaptureAdapter,
 ) {
-    private var jpeg: ByteArray? = null
+    private var held: CapturedStill? = null
 
     fun take(jpegQuality: Int): CapturedStill {
         require(jpegQuality in 1..100) { "jpeg quality is $jpegQuality" }
@@ -31,7 +31,7 @@ class GlassStillShot(
         session.noteCamera(CameraState.OPENING)
         try {
             val still = capture.captureStill(jpegQuality)
-            jpeg = still.jpeg
+            held = still
             session.publishCaptureReady(
                 CaptureReady(
                     jpegBytes = still.jpeg.size.toLong(),
@@ -43,14 +43,20 @@ class GlassStillShot(
             )
             return still
         } catch (error: Throwable) {
-            jpeg = null
+            held = null
             if (session.camera != CameraState.CLOSED) session.noteCamera(CameraState.CLOSED)
             throw error
         }
     }
 
-    fun retainedJpeg(): ByteArray? {
-        if (session.pendingCapture == null) jpeg = null
-        return jpeg?.copyOf()
+    fun retainedJpeg(): ByteArray? = retainedStill()?.jpeg
+
+    fun retainedStill(): CapturedStill? {
+        if (session.pendingCapture == null) {
+            held = null
+            return null
+        }
+        val still = held ?: return null
+        return still.copy(jpeg = still.jpeg.copyOf())
     }
 }

@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 9 まででリポジトリにあるもの:
+Phase 10 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -45,6 +45,7 @@ shodo-ghost/
       Enums.kt             メッセージ種別、タッチ、リンク相
       GattProfile.kt       UUID とプロパティ
       WifiSession.kt       WebSocket のパスとテキストフレーム
+      WifiJpegClient.kt    グラスから iPhone へ JPEG を送る
       FrameCodec.kt        SOF フレームと CRC
       Messages.kt          メッセージ本体
       Assembler.kt         分割と再構成
@@ -69,6 +70,7 @@ shodo-ghost/
       hud/HudRendererTest.kt
       camera/LegacyStillCaptureTest.kt
       camera/GlassStillShotTest.kt
+      WifiJpegClientTest.kt
 ```
 
 iPhone 側:
@@ -81,6 +83,7 @@ ios/Protocol/          Swift Package。符号器、PhoneSession、練習のバ�
   Sources/.../CoreBluetoothPhoneRadio.swift   iOS だけでコンパイル
   Sources/.../TcpPhoneRadio.swift             BLE ループバック用
   Sources/.../WifiBurst.swift                 JPEG の WebSocket。Linux では TCP
+  Sources/.../NwWifiListener.swift            実機の待受。全インターフェイス。Linux では空
   Sources/.../PracticeCoordinator.swift       前面ゲートと添削の順
   Sources/.../PracticeScreen.swift            SwiftUI。Linux では空
 fixtures/canonical.txt Kotlin が書いたバイト列。Swift が再符号化して一致を確認する
@@ -93,8 +96,9 @@ glass/
   build.gradle.kts
   src/main/AndroidManifest.xml
   src/main/kotlin/dev/shodoghost/glass/
-    GlassActivity.kt       左右の画面。撮影は CAPTURE_NOW
+    GlassActivity.kt       左右の画面。撮影のあと JPEG を送る
     GlassLink.kt           GATT ペリフェラル。広告名 ShodoGhost
+    GlassWifi.kt           Wi-Fi ロックと WifiJpegClient
     HudView.kt             1280×480 を補間なしで出す
     AndroidHudGlyphs.kt    システムフォントで文字を二値化
     AndroidStillCamera.kt  Camera.open(0)
@@ -116,11 +120,12 @@ server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ば�
 | 1 | 済み | 契約、シーケンス、見直し、Kotlin と Swift の符号器 |
 | 2 | 済み | `GlassSession` と `PhoneSession`。TCP ループバックで往復。Android GATT モジュールは未作成 |
 | 3 | 済み | 640×480 の HUD と `PracticeHud`。Android の Activity は未作成 |
-| 4 | 済み | 前面の練習画面、JPEG バースト、`ManualCritique`。`NWListener` は未作成 |
+| 4 | 済み | 前面の練習画面、JPEG バースト、`ManualCritique`。実機の待受は Phase 10 |
 | 5 | 済み | スリープで Wi-Fi を放す。再接続で JPEG 1 枚と手本を戻す。mAh は未計測 |
 | 6 | 済み | カメラ 0 を1枚だけ開き、閉じてから `CAPTURE_READY` |
 | 7 | 済み | 1280×480 の Activity。起動 4 秒後に 1 枚撮って閉じる |
 | 8 | 済み | `ShodoGhost` を広告し、`CAPTURE_NOW` で 1 枚撮る |
-| 9 | ここ | `ios/Phone`。撮影ボタンが `CAPTURE_NOW` を送る。iPhone へは Sideloadly |
+| 9 | 済み | `ios/Phone`。撮影ボタンが `CAPTURE_NOW` を送る。iPhone へは Sideloadly |
+| 10 | ここ | JPEG をホットスポット越しに iPhone の画面へ出す。添削はまだ |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。
