@@ -29,7 +29,7 @@ iPhone はセントラルです。API は CoreBluetooth。
 
 ## Wi-Fi バースト
 
-Android の Foreground Service に相当する常駐は iOS に無い。撮影アプリは `CAPTURE_READY` のあとだけ `NwWifiListener`（`NWListener`、全インターフェイス）を開く。添削はまだ呼ばない。Linux の契約テストは `TcpWifiListener`（`127.0.0.1`）で、`PracticeCoordinator` が前面ゲートと添削を持つ。手順は [phase-10.md](phase-10.md) と [phase-4.md](phase-4.md)。
+Android の Foreground Service に相当する常駐は iOS に無い。撮影アプリは `CAPTURE_READY` のあとだけ `NwWifiListener`（`NWListener`、全インターフェイス）を開き、Wi-Fi を閉じてから `ManualCritique` を BLE で返す。Linux の契約テストは `TcpWifiListener`（`127.0.0.1`）で、`PracticeCoordinator` が前面ゲートと添削を持つ。手順は [phase-11.md](phase-11.md) と [phase-4.md](phase-4.md)。
 
 - 権限文は `NSLocalNetworkUsageDescription`
 - アドレスは BLE の `BEGIN_WIFI_SESSION` でグラスへ渡す。Bonjour には依存しない

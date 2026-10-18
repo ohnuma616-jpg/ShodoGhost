@@ -4,7 +4,7 @@ import android.content.Context
 import android.net.wifi.WifiManager
 import dev.shodoghost.protocol.BeginWifiSession
 import dev.shodoghost.protocol.WifiJpegClient
-import dev.shodoghost.protocol.camera.CapturedStill
+import dev.shodoghost.protocol.CapturedStill
 import dev.shodoghost.protocol.link.GlassSession
 
 /** BEGIN_WIFI のあと、保持している JPEG を iPhone へ送る。 */

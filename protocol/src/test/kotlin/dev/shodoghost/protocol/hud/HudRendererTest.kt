@@ -299,6 +299,18 @@ class PracticeHudTest {
     }
 
     @Test
+    fun reviewFrameDrawsTheCorrectionInRed() {
+        val bitmap = renderHud(
+            reviewFrame(
+                strokes = listOf(Stroke(InkLayer.CORRECTION, 2, listOf(PaperPoint(2000, 2000), PaperPoint(8000, 8000)))),
+                advice = listOf("起筆を垂直に", "ハネを短く"),
+            ),
+        )
+        assertTrue(bitmap.count(HudPalette.CORRECTION) > 0)
+        assertTrue(bitmap.pixels.all { it == HudPalette.UNLIT || it == HudPalette.CORRECTION || it == HudPalette.TEXT })
+    }
+
+    @Test
     fun reviewClickReturnsToTheLessonMode() {
         val hud = PracticeHud()
         hud.onAction(TouchAction.TRIPLE_CLICK, 0)

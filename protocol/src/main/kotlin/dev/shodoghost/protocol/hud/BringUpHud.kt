@@ -31,4 +31,22 @@ fun bringUpFrame(advice: List<String> = emptyList(), warning: String? = null): H
     )
 }
 
+/** 四隅が無い実機でも赤線が見えるよう、用紙全体を画面に合わせる。 */
+fun reviewFrame(strokes: List<Stroke>, advice: List<String>, warning: String? = null): HudFrame {
+    return HudFrame(
+        strokes = strokes,
+        quad = PaperQuad(
+            HudPoint(0, 0),
+            HudPoint(Limits.NORM_MAX, 0),
+            HudPoint(Limits.NORM_MAX, Limits.NORM_MAX),
+            HudPoint(0, Limits.NORM_MAX),
+        ),
+        advice = advice.take(Limits.MAX_ADVICE_LINES),
+        showCrosshair = false,
+        warning = warning,
+        lineWidthPx = Limits.MIN_LINE_PX,
+        mode = HudMode.REVIEW,
+    )
+}
+
 private fun line(y: Int) = listOf(PaperPoint(800, y), PaperPoint(9200, y))

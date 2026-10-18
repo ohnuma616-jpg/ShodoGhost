@@ -119,6 +119,22 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
                 DispatchQueue.main.async {
                     self.jpeg = data
                     self.detail = "\(jpeg.count) バイト"
+                }
+                try session.showAdvice(["添削中"])
+                let result = try ManualCritique().critique(
+                    CritiqueRequest(
+                        jpeg: jpeg,
+                        exemplarId: 1,
+                        strokes: [],
+                        paper: .hanshi,
+                        widthMm: PaperProfile.hanshi.widthMm,
+                        heightMm: PaperProfile.hanshi.heightMm
+                    )
+                )
+                try session.showAdvice(result.advice)
+                try session.sendCorrections(critiqueId: result.critiqueId, strokes: result.strokes)
+                DispatchQueue.main.async {
+                    self.detail = "添削を送りました"
                     self.receiving = false
                 }
             } catch {

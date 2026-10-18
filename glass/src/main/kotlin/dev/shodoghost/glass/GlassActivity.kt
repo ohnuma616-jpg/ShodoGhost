@@ -11,11 +11,14 @@ import android.view.WindowManager
 import dev.shodoghost.protocol.BeginWifiSession
 import dev.shodoghost.protocol.CaptureNow
 import dev.shodoghost.protocol.LinkPhase
+import dev.shodoghost.protocol.Stroke
+import dev.shodoghost.protocol.StrokePack
 import dev.shodoghost.protocol.camera.GlassStillShot
 import dev.shodoghost.protocol.camera.LegacyStillCapture
 import dev.shodoghost.protocol.hud.DeskMirrorPresenter
 import dev.shodoghost.protocol.hud.bringUpFrame
 import dev.shodoghost.protocol.hud.installHudGlyphs
+import dev.shodoghost.protocol.hud.reviewFrame
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -32,6 +35,8 @@ class GlassActivity : Activity() {
     private lateinit var shot: GlassStillShot
     private var bottom = "起動"
     private var captureShown = false
+    private var reviewAdvice: List<String> = emptyList()
+    private var reviewStrokes: List<Stroke> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,6 +50,8 @@ class GlassActivity : Activity() {
             onPhase = { phase -> runOnUiThread { onPhase(phase) } },
             onStatus = ::note,
             onWifi = ::upload,
+            adviceSink = ::advice,
+            correctionSink = ::correction,
         )
         shot = GlassStillShot(link.session, LegacyStillCapture(stillCamera))
         show(LinkPhase.IDLE)
@@ -112,9 +119,25 @@ class GlassActivity : Activity() {
         }
     }
 
+    private fun advice(lines: List<String>) {
+        runOnUiThread {
+            reviewAdvice = lines
+            show(link.session.phase)
+        }
+    }
+
+    private fun correction(pack: StrokePack) {
+        runOnUiThread {
+            reviewStrokes = if (pack.packIndex == 0) pack.strokes else reviewStrokes + pack.strokes
+            show(link.session.phase)
+        }
+    }
+
     private fun capture(request: CaptureNow) {
         runOnUiThread {
             captureShown = true
+            reviewAdvice = emptyList()
+            reviewStrokes = emptyList()
             bottom = "撮影"
             show(link.session.phase)
         }
@@ -184,12 +207,13 @@ class GlassActivity : Activity() {
             phase != LinkPhase.WIFI_WAKE &&
             phase != LinkPhase.TRANSFER &&
             phase != LinkPhase.WIFI_TEARDOWN
-        presenter.present(
-            bringUpFrame(
-                advice = listOf(bottom),
-                warning = warning ?: if (disconnected) "未接続" else null,
-            ),
-        )
+        val linkWarning = warning ?: if (disconnected) "未接続" else null
+        val frame = if (reviewAdvice.isNotEmpty() || reviewStrokes.isNotEmpty()) {
+            reviewFrame(reviewStrokes, reviewAdvice, linkWarning)
+        } else {
+            bringUpFrame(advice = listOf(bottom), warning = linkWarning)
+        }
+        presenter.present(frame)
         val panel = presenter.mirrored
         Log.i(TAG, "panel ${panel.width}x${panel.height} phase ${phase.name}")
         view.setPanel(panel)

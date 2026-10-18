@@ -25,6 +25,7 @@ import android.util.Log
 import dev.shodoghost.protocol.BeginWifiSession
 import dev.shodoghost.protocol.CaptureNow
 import dev.shodoghost.protocol.GattProfile
+import dev.shodoghost.protocol.StrokePack
 import dev.shodoghost.protocol.Limits
 import dev.shodoghost.protocol.LinkPhase
 import dev.shodoghost.protocol.link.GlassListener
@@ -43,6 +44,8 @@ class GlassLink(
     private val onPhase: (LinkPhase) -> Unit,
     private val onStatus: (String) -> Unit,
     private val onWifi: (BeginWifiSession) -> Unit,
+    private val adviceSink: (List<String>) -> Unit,
+    private val correctionSink: (StrokePack) -> Unit,
 ) {
     val session: GlassSession
     private val manager = context.getSystemService(BluetoothManager::class.java)
@@ -80,6 +83,14 @@ class GlassLink(
 
                 override fun onWifiBegin(session: BeginWifiSession) {
                     onWifi(session)
+                }
+
+                override fun onAdvice(lines: List<String>) {
+                    adviceSink(lines)
+                }
+
+                override fun onStrokePack(pack: StrokePack) {
+                    if (pack.correction) correctionSink(pack)
                 }
             },
         )
