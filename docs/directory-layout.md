@@ -19,6 +19,7 @@ shodo-ghost/
     directory-layout.md
     phase-2.md
     phase-3.md
+    reference-projects.md
   scripts/
     loopback-check.sh      TCP のグラス役と Swift の往復試験
   protocol/

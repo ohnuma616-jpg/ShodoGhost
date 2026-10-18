@@ -30,6 +30,7 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 | [docs/sequences.md](docs/sequences.md) | 通信シーケンス |
 | [docs/hud-and-input.md](docs/hud-and-input.md) | セーフエリア、色、タッチ |
 | [docs/directory-layout.md](docs/directory-layout.md) | ディレクトリと次フェーズの置き場 |
+| [docs/reference-projects.md](docs/reference-projects.md) | FixLensAR と TapInsight。ソースは取り込まない |
 
 ## 動かし方
 
