@@ -81,3 +81,5 @@ SessionInfo（Read）:
 `RetrySchedule.delayMs` は試行 0 から 1000、2000、4000、8000、以降 15000 ミリ秒。
 
 再接続後、スマホは `STATE` を待つ。`overlayBits` に手本ビットが無ければ `EXEMPLAR_META` と `STROKE_PACK` を送り直す。保留 JPEG があるグラスは `CAPTURE_READY` を再送する。JPEG の実体はまだグラス側にあり、Wi-Fi バーストで送る。
+
+この手順を実行するクラスは `GlassSession` と `PhoneSession`。UUID からメソッドへの対応は [phase-2.md](phase-2.md)。

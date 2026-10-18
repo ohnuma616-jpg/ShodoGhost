@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 1 でリポジトリにあるもの:
+Phase 2 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -17,6 +17,9 @@ shodo-ghost/
     hud-and-input.md
     iphone.md
     directory-layout.md
+    phase-2.md
+  scripts/
+    loopback-check.sh      TCP のグラス役と Swift の往復試験
   protocol/
     build.gradle.kts
     src/main/kotlin/dev/shodoghost/protocol/
@@ -33,13 +36,21 @@ shodo-ghost/
       Adapters.kt          SDK 境界と十字リーダー
       Crc.kt
       ByteIo.kt
-    src/test/kotlin/dev/shodoghost/protocol/ProtocolTest.kt
+      link/GlassSession.kt GATT サーバが委譲するセッション
+      link/AttFraming.kt   テスト用のモックパイプ。オンエアではない
+      loopback/LoopbackGlassHost.kt
+    src/test/kotlin/dev/shodoghost/protocol/
+      ProtocolTest.kt
+      link/GlassSessionTest.kt
 ```
 
-Phase 1 で加えてあるもの:
+iPhone 側:
 
 ```text
-ios/Protocol/          Swift Package。iPhone がリンクする符号器
+ios/Protocol/          Swift Package。符号器と PhoneSession
+  Sources/.../PhoneSession.swift
+  Sources/.../CoreBluetoothPhoneRadio.swift   iOS だけでコンパイル
+  Sources/.../TcpPhoneRadio.swift             ループバック用
 fixtures/canonical.txt Kotlin が書いたバイト列。Swift が再符号化して一致を確認する
 ```
 
@@ -57,10 +68,10 @@ server/         Phase 4 の任意。Python、OpenCV、VLM。iPhone からのみ�
 
 | フェーズ | 状態 | 中身 |
 | --- | --- | --- |
-| 1 | ここ | 契約、シーケンス、見直し、Kotlin と Swift の符号器 |
-| 2 | 未着手 | グラスの GATT サーバと iPhone の CoreBluetooth。ループバックでモック検証 |
+| 1 | 済み | 契約、シーケンス、見直し、Kotlin と Swift の符号器 |
+| 2 | ここ | `GlassSession` と `PhoneSession`。TCP ループバックで往復。Android GATT モジュールは未作成 |
 | 3 | 未着手 | 透過 HUD、セーフエリア、タッチを `TouchAction` へ |
 | 4 | 未着手 | SwiftUI、前面の練習画面での待受、`AnalysisBackend` |
 | 5 | 未着手 | スリープ復帰の実機調整、再接続、計測に基づく省電力 |
 
-Phase 2 は新しいパケットを増やさない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。
+Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。

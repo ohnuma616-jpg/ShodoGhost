@@ -11,9 +11,9 @@ sequenceDiagram
     Glass->>Glass: resumed で広告 ShodoGhost
     Phone->>Glass: Service UUID でスキャン
     Phone->>Glass: Connect, bond
-    Phone->>Glass: requestMtu 247
+    Phone->>Glass: MTU 交換（iOS はシステム。下限 185、希望 247）
     alt MTU が 185 未満
-        Phone->>Phone: BACKOFF, MTU_TOO_SMALL
+        Phone->>Phone: NEGOTIATING まで進めて HELLO せず BACKOFF
     else MTU 成立
         Phone->>Glass: Notify 有効化, Read SESSION_INFO
         Phone->>Glass: Command HELLO
@@ -23,6 +23,8 @@ sequenceDiagram
 ```
 
 `HELLO_ACK.accept` が 0 のときは `HELLO_REJECTED` で `BACKOFF`。
+
+`END_WIFI_SESSION` の ACK が OK のとき、`WIFI_WAKE` からは `STOP`、`TRANSFER` からは `TRANSFER_FINISHED` で `WIFI_TEARDOWN` に入り、続けて `WIFI_TORN_DOWN` で `BLE_READY` に戻る。`WIFI_CLOSED` が後から来ても、すでに `BLE_READY` なら相は動かない。セッション実装は [phase-2.md](phase-2.md)。
 
 ## 手本を載せる
 

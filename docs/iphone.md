@@ -17,9 +17,13 @@ iPhone はセントラルです。API は CoreBluetooth。
 
 ペアリングは iOS のシステム UI に出す。Phase 2 のグラス GATT は Command / Payload / SessionInfo を暗号化必須にする。iPhone がそこに触れた時点でペアリングが始まる。HELLO より前の書き込みはグラスが捨てる。
 
-`requestMtu` は iOS に無い。書き込み長は `maximumWriteValueLength(for: .withResponse)`。182 バイト未満ならこの契約の MTU 下限を満たさない。
+`requestMtu` は iOS に無い。書き込み長は `maximumWriteValueLength(for: .withResponse)`。182 バイト未満ならこの契約の MTU 下限を満たさない。`PhoneSession` はそのとき HELLO を送らず `BACKOFF` へ進む。
 
-再接続間隔は `RetrySchedule` のまま（1 秒から 15 秒）。
+セッション本体は `PhoneSession`。電波は `CoreBluetoothPhoneRadio`。`prepare` がマネージャを作り、Service UUID でスキャンし、Status と Payload の Notify を有効にしてから MTU（書き込み長 + 3）をセッションへ渡す。切断ではペリフェラルを捨て、次の `prepare` がスキャンし直す。
+
+再接続間隔は `RetrySchedule` のまま（1 秒から 15 秒）。`PhoneSession.scheduleRetry` の既定がこの待ちを `DispatchQueue.global` に載せる。アプリは差し替えてよい。
+
+実装の対応表とモックパイプは [phase-2.md](phase-2.md)。
 
 ## Wi-Fi バースト
 

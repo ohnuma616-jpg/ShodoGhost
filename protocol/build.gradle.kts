@@ -13,3 +13,11 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.register<JavaExec>("loopback") {
+    group = "application"
+    description = "Serve one mock GATT session on TCP. Args: <port> <ready-file>"
+    classpath = sourceSets.named("main").get().runtimeClasspath
+    mainClass.set("dev.shodoghost.protocol.loopback.LoopbackGlassHost")
+    standardInput = System.`in`
+}

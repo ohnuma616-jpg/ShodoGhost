@@ -2,7 +2,7 @@
 
 RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙の上に手本の線を重ね、書き終えた静止画をスマートフォン側で添削する。
 
-今あるのは **Phase 1（アーキテクチャと通信契約）** だけです。BLE の接続実装、HUD、スマホ UI はまだありません。
+今あるのは **Phase 2（セッション）** までです。グラスと iPhone のセッションが Phase 1 のフレームを往復する。HUD と SwiftUI はまだ無い。Android の GATT サーバは SDK が無いのでモジュールにしていない。
 
 ## このフェーズで固定したこと
 
@@ -21,6 +21,7 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 | 文書 | 内容 |
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | スタック、役割、アダプタ、電力 |
+| [docs/phase-2.md](docs/phase-2.md) | セッション、モック GATT、ループバック |
 | [docs/iphone.md](docs/iphone.md) | iPhone の BLE バックグラウンド、Wi-Fi、権限 |
 | [docs/spec-review.md](docs/spec-review.md) | 仕様書の見直し |
 | [docs/ble-gatt.md](docs/ble-gatt.md) | Custom Service と Characteristic |
@@ -45,7 +46,15 @@ iPhone 側の同じ契約は Swift パッケージです。Swift 6 のツール�
 swift test --package-path ios/Protocol
 ```
 
-このテストは `fixtures/canonical.txt` を復号し、再符号化して Kotlin のバイト列と一致することを確認します。
+このテストは `fixtures/canonical.txt` を復号し、再符号化して Kotlin のバイト列と一致することを確認します。セッションの単体試験も同じコマンドに入っています。
+
+グラス役の TCP と iPhone セッションを 1 本で往復させるときは:
+
+```bash
+./scripts/loopback-check.sh
+```
+
+詳細は [docs/phase-2.md](docs/phase-2.md)。
 
 ## ハードウェア前提
 
