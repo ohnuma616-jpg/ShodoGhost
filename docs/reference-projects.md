@@ -20,6 +20,9 @@ FixLensAR の仕様（`docs/spec.md`、2026-10-13）で実機に寄せて書い�
 
 - 黒 `#000000` は透明。
 - `WebCamTexture` で取れたのは白黒の魚眼。接続した X3 Pro では、カメラ ID `0`（`device@3.7/legacy/0`）が 4032×3024、焦点距離 1.90mm。ID `1`（`legacy/1`）が 640×480、焦点距離 0.71mm。どちらも背面で、魚眼は ID `1` と一致する。OpenXR と ShareCamera は使っていない。
+- 同じ確認用 APK で、ID `0` のワンショットが実写になった。`android.hardware.Camera.open(0)`、絵のサイズ 4032×3024、`SurfaceTexture` でプレビューを始め、約 0.7 秒後に `takePicture`。Java の `PictureCallback` が 2,358,138 バイトを書き、`stopPreview` と `release` を呼んだ。EXIF は 2026-10-19 02:02:49 +09:00、焦点距離 1.90mm、35mm 換算 11mm、F2.25、ISO 546、露光 1/100 秒。メーカー RayNeo、モデル ARGF20。机の前のカラー写真で、魚眼ではない。
+- Unity の `AndroidJavaProxy` では Camera2 の `CameraDevice.StateCallback` を実装できない。抽象クラスであり、`IllegalArgumentException` になった。C# 側の `Camera.PictureCallback` も `onPictureTaken` が届かず、Java 側のコールバックで書けた。
+- その JPEG の保存先は Unity の `persistentDataPath`（`/storage/emulated/0/Android/data/dev.shodoghost.probe/files/still.jpg`）。`run-as` からは `Permission denied`。`adb pull` では同じパスを取れた。
 - `SpeechRecognizer` はウェイクワード専用で、手順の音声コマンドには使えなかった。オンデバイスの Vosk を使っている。
 - ジャイロ積分の枠はドリフトし、平行移動には追従しない。空間固定は別 APK で、現行ビルドには OpenXR を入れない。
 
