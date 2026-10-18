@@ -26,11 +26,12 @@ shodo-ghost/
     loopback-check.sh      TCP のグラス役と Swift の往復試験
     ci-linux.sh            Ubuntu の契約テスト
     ci-setup-linux.sh      JDK 21 と Swift 6.2
+    sideload-ipa.sh        xtool で Sideloadly 用の IPA
   .buildkite/
-    pipeline.yml           Buildkite の Mac で iPhone をコンパイル
+    pipeline.yml           Buildkite の Mac。Hosted agents は今の組織では制限中
   .depot/workflows/
     checks.yml             Depot の Ubuntu で契約テスト
-  docs/cloud-ci.md         接続手順
+  docs/cloud-ci.md         Sideloadly と xtool の手順
   protocol/
     build.gradle.kts
     src/main/kotlin/dev/shodoghost/protocol/
@@ -69,7 +70,8 @@ shodo-ghost/
 iPhone 側:
 
 ```text
-ios/App/               Xcode アプリ。撮影ボタンが CAPTURE_NOW を送る
+ios/App/               Xcode プロジェクト。ソースは ios/Phone を指す
+ios/Phone/             xtool のアプリ。Sideloadly 用の IPA になる
 ios/Protocol/          Swift Package。符号器、PhoneSession、練習のバースト
   Sources/.../PhoneSession.swift
   Sources/.../CoreBluetoothPhoneRadio.swift   iOS だけでコンパイル
@@ -115,6 +117,6 @@ server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ば�
 | 6 | 済み | カメラ 0 を1枚だけ開き、閉じてから `CAPTURE_READY` |
 | 7 | 済み | 1280×480 の Activity。起動 4 秒後に 1 枚撮って閉じる |
 | 8 | 済み | `ShodoGhost` を広告し、`CAPTURE_NOW` で 1 枚撮る |
-| 9 | ここ | `ios/App`。接続して撮影ボタンが `CAPTURE_NOW` を送る。コンパイルは Buildkite の Mac |
+| 9 | ここ | `ios/Phone`。撮影ボタンが `CAPTURE_NOW` を送る。iPhone へは Sideloadly |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。

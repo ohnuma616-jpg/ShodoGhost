@@ -11,7 +11,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A10000000000000000000002 /* ShodoGhostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShodoGhostApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000002 /* ShodoGhostApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ShodoGhostApp.swift; path = ../../Phone/Sources/ShodoGhostPhone/ShodoGhostApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000003 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000004 /* ShodoGhost.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShodoGhost.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
