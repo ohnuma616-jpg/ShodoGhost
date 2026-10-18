@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package dev.shodoghost.glass
 
 import android.graphics.ImageFormat

@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 6 まででリポジトリにあるもの:
+Phase 7 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -50,6 +50,7 @@ shodo-ghost/
       hud/HudPaint.kt      太線と二値の文字
       hud/HudRenderer.kt   モード別の配置、左右複製
       hud/PracticeHud.kt   TouchAction から練習状態へ
+      hud/BringUpHud.kt    確認用のシアン、緑、赤
     src/test/kotlin/dev/shodoghost/protocol/
       ProtocolTest.kt
       link/GlassSessionTest.kt
@@ -71,18 +72,25 @@ ios/Protocol/          Swift Package。符号器、PhoneSession、練習のバ�
 fixtures/canonical.txt Kotlin が書いたバイト列。Swift が再符号化して一致を確認する
 ```
 
-Android SDK が必要なソース。この環境の Gradle には入れていない。
+Android SDK があるときだけ `:glass` を含める。
 
 ```text
-glass/src/main/kotlin/dev/shodoghost/glass/AndroidStillCamera.kt
+glass/
+  build.gradle.kts
+  src/main/AndroidManifest.xml
+  src/main/kotlin/dev/shodoghost/glass/
+    GlassActivity.kt       左右の画面と、4秒後の1枚
+    HudView.kt             1280×480 を補間なしで出す
+    AndroidHudGlyphs.kt    システムフォントで文字を二値化
+    AndroidStillCamera.kt  Camera.open(0)
 ```
 
 後続で足す予定。今は作らない。
 
 ```text
-glass/ の Activity    View と Canvas。MercurySDK は adapter 実装だけが参照
-ios/App/        Xcode のアプリターゲット。画面本体は ios/Protocol の PracticeScreen
-server/         任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
+MercurySDK          adapter の裏。BaseMirrorActivity はまだ使わない
+ios/App/            Xcode のアプリターゲット。画面本体は ios/Protocol の PracticeScreen
+server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
 ```
 
 `:protocol` は Android プラグインを適用しない。実機のグラスが `api(project(":protocol"))` する。iPhone は `ios/Protocol` を Swift Package としてリンクする。中身を Kotlin Multiplatform にはしない。iOS 向けの Kotlin/Native はこの Linux 環境で検証できないため、Swift で書いてバイト列を固定する。
@@ -96,6 +104,7 @@ server/         任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
 | 3 | 済み | 640×480 の HUD と `PracticeHud`。Android の Activity は未作成 |
 | 4 | 済み | 前面の練習画面、JPEG バースト、`ManualCritique`。Xcode アプリと `NWListener` は未作成 |
 | 5 | 済み | スリープで Wi-Fi を放す。再接続で JPEG 1 枚と手本を戻す。mAh は未計測 |
-| 6 | ここ | カメラ 0 を1枚だけ開き、閉じてから `CAPTURE_READY`。Activity は未作成 |
+| 6 | 済み | カメラ 0 を1枚だけ開き、閉じてから `CAPTURE_READY` |
+| 7 | ここ | 1280×480 の Activity。起動 4 秒後に 1 枚撮って閉じる。電話は未接続 |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。

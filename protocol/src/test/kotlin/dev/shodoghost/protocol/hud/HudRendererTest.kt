@@ -150,6 +150,24 @@ class HudRendererTest {
     }
 
     @Test
+    fun bringUpFrameMirrorsThreeLines() {
+        val presenter = DeskMirrorPresenter()
+        presenter.present(bringUpFrame())
+        val panel = presenter.panel
+        assertTrue(panel.count(HudPalette.EXEMPLAR) > 20)
+        assertTrue(panel.count(HudPalette.CONTOUR) > 20)
+        assertTrue(panel.count(HudPalette.CORRECTION) > 20)
+        val eyes = presenter.mirrored
+        assertEquals(HudCanvas.WIDTH * 2, eyes.width)
+        assertEquals(HudCanvas.HEIGHT, eyes.height)
+        for (y in 0 until eyes.height) {
+            for (x in 0 until HudCanvas.WIDTH) {
+                assertEquals(eyes.get(x, y), eyes.get(x + HudCanvas.WIDTH, y))
+            }
+        }
+    }
+
+    @Test
     fun mirrorCopiesBothEyes() {
         val presenter = DeskMirrorPresenter()
         presenter.present(

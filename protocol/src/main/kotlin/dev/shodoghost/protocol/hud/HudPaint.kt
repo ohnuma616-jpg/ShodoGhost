@@ -96,10 +96,10 @@ fun paintWarningMark(bitmap: HudBitmap) {
 fun paintText(bitmap: HudBitmap, text: String, clip: PixelRect, color: Int) {
     if (text.isEmpty() || clip.width <= 0 || clip.height <= 0) return
     var size = 22
-    var mask = rasterize(text, size)
+    var mask = activeGlyphs.raster(text, size)
     while (size > 14 && (mask.width > clip.width || mask.height > clip.height)) {
         size -= 2
-        mask = rasterize(text, size)
+        mask = activeGlyphs.raster(text, size)
     }
     val x = clip.left
     val y = clip.top + ((clip.height - mask.height).coerceAtLeast(0)) / 2
@@ -113,11 +113,26 @@ fun paintText(bitmap: HudBitmap, text: String, clip: PixelRect, color: Int) {
     }
 }
 
-private class TextMask(val width: Int, val height: Int, private val bits: BooleanArray) {
+data class HudGlyphMask(val width: Int, val height: Int, val bits: BooleanArray) {
     fun on(x: Int, y: Int): Boolean = bits[y * width + x]
+
+    init {
+        require(width > 0 && height > 0 && bits.size == width * height)
+    }
 }
 
-private fun rasterize(text: String, size: Int): TextMask {
+fun interface HudGlyphs {
+    fun raster(text: String, sizePx: Int): HudGlyphMask
+}
+
+/** Android は java.awt が無いので、描く前に差し替える。未設定なら AWT。 */
+fun installHudGlyphs(glyphs: HudGlyphs) {
+    activeGlyphs = glyphs
+}
+
+internal var activeGlyphs: HudGlyphs = HudGlyphs { text, size -> awtRaster(text, size) }
+
+private fun awtRaster(text: String, size: Int): HudGlyphMask {
     val font = HudTypeface.font.deriveFont(Font.PLAIN, size.toFloat())
     val probe = BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB)
     val metrics = probe.createGraphics().let { graphics ->
@@ -141,7 +156,7 @@ private fun rasterize(text: String, size: Int): TextMask {
             bits[y * width + x] = (image.getRGB(x, y) and 0xFFFFFF) != 0
         }
     }
-    return TextMask(width, height, bits)
+    return HudGlyphMask(width, height, bits)
 }
 
 private fun configureText(graphics: Graphics2D) {

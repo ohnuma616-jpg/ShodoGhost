@@ -2,7 +2,7 @@
 
 RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙の上に手本の線を重ね、書き終えた静止画をスマートフォン側で添削する。
 
-今あるのは **Phase 6（カメラ 0 のワンショット）** までです。640×480 の透過 HUD と、前面だけの JPEG バーストに加え、パネル消灯では Wi-Fi だけを放します。未送信の JPEG はメモリ 1 枚を再接続後に送り直します。静止画は `Camera.open(0)` で 1 枚取り、戻る前に閉じます。ディスクへは書きません。SwiftUI の画面はこの Linux ではコンパイルせず、Xcode アプリとグラスの Activity はまだ無い。
+今あるのは **Phase 7（グラスの画面）** までです。640×480 の透過 HUD を 1280×480 の左右へ出し、カメラ 0 で 1 枚撮って閉じます。未送信の JPEG はメモリ 1 枚を再接続後に送り直します。確認用 Activity だけ、引き出すために `files/still.jpg` へ 1 枚書きます。SwiftUI の画面はこの Linux ではコンパイルせず、Xcode アプリはまだ無い。
 
 ## このフェーズで固定したこと
 
@@ -26,6 +26,7 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 | [docs/phase-4.md](docs/phase-4.md) | 前面の練習画面、JPEG バースト、添削 |
 | [docs/phase-5.md](docs/phase-5.md) | スリープ、再接続、ラジオを持ってよい相 |
 | [docs/phase-6.md](docs/phase-6.md) | カメラ 0 のワンショットと、メモリに残す JPEG |
+| [docs/phase-7.md](docs/phase-7.md) | 1280×480 の画面と、起動後 1 枚の撮影 |
 | [docs/iphone.md](docs/iphone.md) | iPhone の BLE バックグラウンド、Wi-Fi、権限 |
 | [docs/spec-review.md](docs/spec-review.md) | 仕様書の見直し |
 | [docs/ble-gatt.md](docs/ble-gatt.md) | Custom Service と Characteristic |
