@@ -8,23 +8,27 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
+import dev.shodoghost.protocol.CaptureNow
+import dev.shodoghost.protocol.LinkPhase
+import dev.shodoghost.protocol.camera.GlassStillShot
 import dev.shodoghost.protocol.camera.LegacyStillCapture
 import dev.shodoghost.protocol.hud.DeskMirrorPresenter
 import dev.shodoghost.protocol.hud.bringUpFrame
 import dev.shodoghost.protocol.hud.installHudGlyphs
 import java.io.File
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * 640×480 を左右へ出してから、カメラ 0 を1枚だけ開く。
- * 撮影スレッドは Looper を持たない。コールバックはメインへ戻り、ここで待たない。
+ * 640×480 を左右へ出す。撮影は iPhone の CAPTURE_NOW が来てから、ロックの外で 1 枚。
+ * 撮影スレッドは Looper を持たない。
  */
 class GlassActivity : Activity() {
     private val presenter = DeskMirrorPresenter()
     private val view by lazy { HudView(this) }
     private val worker = Executors.newSingleThreadExecutor()
-    private val started = AtomicBoolean(false)
+    private lateinit var link: GlassLink
+    private lateinit var shot: GlassStillShot
+    private var line: List<String> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,13 +36,21 @@ class GlassActivity : Activity() {
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         hideSystemUi()
-        show(advice = emptyList(), warning = null)
+        link = GlassLink(
+            this,
+            onCapture = ::capture,
+            onPhase = { phase -> runOnUiThread { show(phase) } },
+        )
+        shot = GlassStillShot(link.session, LegacyStillCapture(AndroidStillCamera()))
+        show(LinkPhase.IDLE)
         setContentView(view)
-        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            scheduleCapture()
-        } else {
-            requestPermissions(arrayOf(Manifest.permission.CAMERA), CAMERA_REQUEST)
-        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        val missing = REQUIRED.filter { checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED }
+        if (missing.isEmpty()) link.start()
+        else requestPermissions(missing.toTypedArray(), PERMISSION_REQUEST)
     }
 
     override fun onRequestPermissionsResult(
@@ -47,41 +59,53 @@ class GlassActivity : Activity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == CAMERA_REQUEST && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-            scheduleCapture()
+        if (requestCode != PERMISSION_REQUEST) return
+        if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
+            link.start()
         } else {
-            show(advice = emptyList(), warning = "カメラ拒否")
+            show(LinkPhase.IDLE, warning = "許可待ち")
         }
     }
 
+    override fun onPause() {
+        link.stopAdvertising()
+        super.onPause()
+    }
+
     override fun onDestroy() {
+        link.close()
         worker.shutdown()
         super.onDestroy()
     }
 
-    private fun scheduleCapture() {
-        view.postDelayed({ shoot() }, CAPTURE_DELAY_MS)
-    }
-
-    private fun shoot() {
-        if (!started.compareAndSet(false, true)) return
+    private fun capture(request: CaptureNow) {
         worker.execute {
             try {
-                val still = LegacyStillCapture(AndroidStillCamera()).captureStill(JPEG_QUALITY)
+                val still = shot.take(request.jpegQuality)
                 File(filesDir, STILL_NAME).writeBytes(still.jpeg)
                 Log.i(TAG, "bytes ${still.jpeg.size} ${still.width}x${still.height} released ${still.cameraReleased}")
-                runOnUiThread { show(advice = listOf(still.jpeg.size.toString()), warning = null) }
+                runOnUiThread { show(link.session.phase, advice = listOf(still.jpeg.size.toString())) }
             } catch (error: Exception) {
                 Log.i(TAG, "capture failed ${error.message}")
-                runOnUiThread { show(advice = emptyList(), warning = "撮影失敗") }
+                runOnUiThread { show(link.session.phase, warning = "撮影失敗") }
             }
         }
     }
 
-    private fun show(advice: List<String>, warning: String?) {
-        presenter.present(bringUpFrame(advice, warning))
+    private fun show(phase: LinkPhase, advice: List<String> = line, warning: String? = null) {
+        line = advice
+        val disconnected = phase != LinkPhase.BLE_READY &&
+            phase != LinkPhase.WIFI_WAKE &&
+            phase != LinkPhase.TRANSFER &&
+            phase != LinkPhase.WIFI_TEARDOWN
+        presenter.present(
+            bringUpFrame(
+                advice = advice,
+                warning = warning ?: if (disconnected) "未接続" else null,
+            ),
+        )
         val panel = presenter.mirrored
-        Log.i(TAG, "panel ${panel.width}x${panel.height}")
+        Log.i(TAG, "panel ${panel.width}x${panel.height} phase ${phase.name}")
         view.setPanel(panel)
     }
 
@@ -99,8 +123,11 @@ class GlassActivity : Activity() {
     private companion object {
         const val TAG = "ShodoGlass"
         const val STILL_NAME = "still.jpg"
-        const val JPEG_QUALITY = 90
-        const val CAPTURE_DELAY_MS = 4_000L
-        const val CAMERA_REQUEST = 1
+        const val PERMISSION_REQUEST = 1
+        val REQUIRED = arrayOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+        )
     }
 }

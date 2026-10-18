@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 7 まででリポジトリにあるもの:
+Phase 8 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -79,7 +79,8 @@ glass/
   build.gradle.kts
   src/main/AndroidManifest.xml
   src/main/kotlin/dev/shodoghost/glass/
-    GlassActivity.kt       左右の画面と、4秒後の1枚
+    GlassActivity.kt       左右の画面。撮影は CAPTURE_NOW
+    GlassLink.kt           GATT ペリフェラル。広告名 ShodoGhost
     HudView.kt             1280×480 を補間なしで出す
     AndroidHudGlyphs.kt    システムフォントで文字を二値化
     AndroidStillCamera.kt  Camera.open(0)
@@ -105,6 +106,7 @@ server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ば�
 | 4 | 済み | 前面の練習画面、JPEG バースト、`ManualCritique`。Xcode アプリと `NWListener` は未作成 |
 | 5 | 済み | スリープで Wi-Fi を放す。再接続で JPEG 1 枚と手本を戻す。mAh は未計測 |
 | 6 | 済み | カメラ 0 を1枚だけ開き、閉じてから `CAPTURE_READY` |
-| 7 | ここ | 1280×480 の Activity。起動 4 秒後に 1 枚撮って閉じる。電話は未接続 |
+| 7 | 済み | 1280×480 の Activity。起動 4 秒後に 1 枚撮って閉じる |
+| 8 | ここ | `ShodoGhost` を広告し、`CAPTURE_NOW` で 1 枚撮る。Xcode アプリは未作成 |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。

@@ -2,7 +2,7 @@
 
 オンエアのパケットは Phase 1 のまま。このフェーズで足したのは、そのフレームを GATT の読み書きに載せるセッションと、Linux で往復できるモックパイプ。
 
-新しいメッセージ型は無い。Android の `BluetoothGattServer` モジュールは置いていない。この環境に Android SDK が無く、コンパイルできないため。グラス側の本体は JVM の `GlassSession` で、将来の GATT サーバは UUID でそこへ委譲する。
+新しいメッセージ型は無い。グラス側の本体は JVM の `GlassSession` で、Android の GATT サーバは [phase-8.md](phase-8.md) の `GlassLink` が UUID でそこへ委譲する。
 
 ## 役割
 

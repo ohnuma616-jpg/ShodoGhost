@@ -2,7 +2,7 @@
 
 RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙の上に手本の線を重ね、書き終えた静止画をスマートフォン側で添削する。
 
-今あるのは **Phase 7（グラスの画面）** までです。640×480 の透過 HUD を 1280×480 の左右へ出し、カメラ 0 で 1 枚撮って閉じます。未送信の JPEG はメモリ 1 枚を再接続後に送り直します。確認用 Activity だけ、引き出すために `files/still.jpg` へ 1 枚書きます。SwiftUI の画面はこの Linux ではコンパイルせず、Xcode アプリはまだ無い。
+今あるのは **Phase 8（BLE で撮影）** までです。640×480 の透過 HUD を 1280×480 の左右へ出し、グラスは `ShodoGhost` として広告します。撮影は iPhone の `CAPTURE_NOW` でカメラ 0 を 1 枚開いて閉じます。未送信の JPEG はメモリ 1 枚を再接続後に送り直します。確認用 Activity だけ、引き出すために `files/still.jpg` へ 1 枚書きます。SwiftUI の画面はこの Linux ではコンパイルせず、Xcode アプリはまだ無い。
 
 ## このフェーズで固定したこと
 
@@ -27,6 +27,7 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 | [docs/phase-5.md](docs/phase-5.md) | スリープ、再接続、ラジオを持ってよい相 |
 | [docs/phase-6.md](docs/phase-6.md) | カメラ 0 のワンショットと、メモリに残す JPEG |
 | [docs/phase-7.md](docs/phase-7.md) | 1280×480 の画面と、起動後 1 枚の撮影 |
+| [docs/phase-8.md](docs/phase-8.md) | BLE 広告と、電話からの CAPTURE_NOW |
 | [docs/iphone.md](docs/iphone.md) | iPhone の BLE バックグラウンド、Wi-Fi、権限 |
 | [docs/spec-review.md](docs/spec-review.md) | 仕様書の見直し |
 | [docs/ble-gatt.md](docs/ble-gatt.md) | Custom Service と Characteristic |
