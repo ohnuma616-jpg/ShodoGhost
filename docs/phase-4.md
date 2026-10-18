@@ -67,4 +67,4 @@ swift test --package-path ios/Protocol
 
 ## まだ置かない
 
-スリープ復帰、再接続の実機調整、計測に基づく省電力は Phase 5。`NWListener`、Xcode プロジェクト、OpenCV のサーバは、実機か LAN が揃ってから。
+スリープと再接続とラジオの保持は [phase-5.md](phase-5.md)。`NWListener`、Xcode プロジェクト、OpenCV のサーバは、実機か LAN が揃ってから。

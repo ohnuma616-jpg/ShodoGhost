@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 4 まででリポジトリにあるもの:
+Phase 5 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -20,6 +20,7 @@ shodo-ghost/
     phase-2.md
     phase-3.md
     phase-4.md
+    phase-5.md
     reference-projects.md
   scripts/
     loopback-check.sh      TCP のグラス役と Swift の往復試験
@@ -36,6 +37,7 @@ shodo-ghost/
       Messages.kt          メッセージ本体
       Assembler.kt         分割と再構成
       LinkStateMachine.kt  BLE 常時 / Wi-Fi バースト
+      PowerPolicy.kt       相ごとに持ってよいラジオ。ディスクへは残さない
       Adapters.kt          SDK 境界と十字リーダー
       Crc.kt
       ByteIo.kt
@@ -82,7 +84,7 @@ server/         任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
 | 1 | 済み | 契約、シーケンス、見直し、Kotlin と Swift の符号器 |
 | 2 | 済み | `GlassSession` と `PhoneSession`。TCP ループバックで往復。Android GATT モジュールは未作成 |
 | 3 | 済み | 640×480 の HUD と `PracticeHud`。Android の Activity は未作成 |
-| 4 | ここ | 前面の練習画面、JPEG バースト、`ManualCritique`。Xcode アプリと `NWListener` は未作成 |
-| 5 | 未着手 | スリープ復帰の実機調整、再接続、計測に基づく省電力 |
+| 4 | 済み | 前面の練習画面、JPEG バースト、`ManualCritique`。Xcode アプリと `NWListener` は未作成 |
+| 5 | ここ | スリープで Wi-Fi を放す。再接続で JPEG 1 枚と手本を戻す。mAh は未計測 |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。

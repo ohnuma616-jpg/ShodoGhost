@@ -26,7 +26,9 @@ import dev.shodoghost.protocol.LinkStateMachine
 import dev.shodoghost.protocol.OverlayBits
 import dev.shodoghost.protocol.Ping
 import dev.shodoghost.protocol.Pong
+import dev.shodoghost.protocol.PowerPolicy
 import dev.shodoghost.protocol.Protocol
+import dev.shodoghost.protocol.RadioKind
 import dev.shodoghost.protocol.SessionInfo
 import dev.shodoghost.protocol.SetHud
 import dev.shodoghost.protocol.SetMode
@@ -90,8 +92,14 @@ class GlassSession(
         private set
     var bonded: Boolean = false
         private set
+    var pendingCapture: CaptureReady? = null
+        private set
+    var displayAsleep: Boolean = false
+        private set
 
     private val startedAt = nowMs()
+    private var wifiSinceMs: Long? = null
+    private var displayOffAtMs: Long? = null
     private val commandIn = InboundAssembler()
     private val payloadIn = InboundAssembler()
     private var outSeq = 1
@@ -107,7 +115,8 @@ class GlassSession(
 
     fun onLinkUp(attMtu: Int) = synchronized(lock) {
         this.attMtu = attMtu
-        if (phase == LinkPhase.IDLE || phase == LinkPhase.BACKOFF) advance(LinkSignal.START)
+        if (phase == LinkPhase.IDLE) advance(LinkSignal.START)
+        if (phase == LinkPhase.BACKOFF) advance(LinkSignal.RETRY)
         if (phase == LinkPhase.DISCOVERING) advance(LinkSignal.PEER_FOUND)
         if (phase == LinkPhase.CONNECTING) advance(LinkSignal.GATT_CONNECTED)
         if (attMtu < Limits.MIN_ATT_MTU) {
@@ -118,7 +127,30 @@ class GlassSession(
     fun onLinkDown() = synchronized(lock) {
         bonded = false
         attMtu = 0
+        wifiSinceMs = null
         advance(LinkSignal.LINK_LOST)
+    }
+
+    fun onClock() = synchronized(lock) {
+        val now = nowMs()
+        if (displayOffAtMs != null && now >= displayOffAtMs!!) enterDisplaySleep()
+        val started = wifiSinceMs ?: return
+        if (now < started || now - started < Limits.WIFI_HARD_TIMEOUT_MS) return
+        if (phase != LinkPhase.WIFI_WAKE && phase != LinkPhase.TRANSFER) return
+        sendError(ErrorCode.WIFI_TIMEOUT, "wifi")
+        dropWifi(notifyClosed = true, closedReason = ErrorCode.WIFI_TIMEOUT.code)
+    }
+
+    fun noteDisplaySleep() = synchronized(lock) {
+        enterDisplaySleep()
+    }
+
+    fun noteDisplayOn() = synchronized(lock) {
+        displayAsleep = false
+    }
+
+    fun radios(): Set<RadioKind> = synchronized(lock) {
+        PowerPolicy.allows(phase, camera != CameraState.CLOSED, displayAsleep)
     }
 
     fun onCommand(bytes: ByteArray) = synchronized(lock) {
@@ -156,12 +188,18 @@ class GlassSession(
     }
 
     fun noteCamera(state: CameraState) = synchronized(lock) {
+        if (state != CameraState.CLOSED && (displayAsleep || phase != LinkPhase.BLE_READY)) {
+            if (canNotify()) sendError(ErrorCode.CAMERA_BUSY, "camera")
+            return
+        }
         camera = state
         publishState()
     }
 
     fun publishCaptureReady(message: CaptureReady) = synchronized(lock) {
         camera = CameraState.CLOSED
+        pendingCapture = message
+        if (!canNotify()) return
         notifyStatus(encode(message))
         publishState()
     }
@@ -225,11 +263,12 @@ class GlassSession(
                 publishState()
             }
             is BeginWifiSession -> {
-                if (phase != LinkPhase.BLE_READY) {
+                if (displayAsleep || phase != LinkPhase.BLE_READY) {
                     ack(sequence, message, ackRequested, AckStatus.BUSY)
                     return
                 }
                 advance(LinkSignal.BEGIN_WIFI)
+                wifiSinceMs = nowMs()
                 ack(sequence, message, ackRequested, AckStatus.OK)
                 listener.onWifiBegin(message)
             }
@@ -241,7 +280,11 @@ class GlassSession(
             }
             is Ping -> notifyStatus(encode(Pong(message.cookie, (nowMs() - startedAt) / 1000)))
             is SetHud -> listener.onHud(message)
-            is SleepHint -> listener.onSleep(message.displayOffDelayMs)
+            is SleepHint -> {
+                listener.onSleep(message.displayOffDelayMs)
+                if (message.displayOffDelayMs == 0) enterDisplaySleep()
+                else displayOffAtMs = nowMs() + message.displayOffDelayMs
+            }
             else -> sendError(ErrorCode.UNSUPPORTED_MODE, message.type.name)
         }
     }
@@ -287,6 +330,7 @@ class GlassSession(
         )
         advance(LinkSignal.HELLO_OK)
         publishState()
+        pendingCapture?.let { notifyStatus(encode(it)) }
     }
 
     private fun onCapture(message: CaptureNow, sequence: Int, ackRequested: Boolean) {
@@ -305,12 +349,47 @@ class GlassSession(
     }
 
     private fun finishWifi() {
+        val delivered = phase == LinkPhase.TRANSFER
         when (phase) {
             LinkPhase.WIFI_WAKE -> advance(LinkSignal.STOP)
             LinkPhase.TRANSFER -> advance(LinkSignal.TRANSFER_FINISHED)
             else -> Unit
         }
         if (phase == LinkPhase.WIFI_TEARDOWN) advance(LinkSignal.WIFI_TORN_DOWN)
+        wifiSinceMs = null
+        if (delivered) pendingCapture = null
+    }
+
+    private fun enterDisplaySleep() {
+        displayOffAtMs = null
+        displayAsleep = true
+        val cameraWasOpen = camera != CameraState.CLOSED
+        camera = CameraState.CLOSED
+        val wasWifi = phase == LinkPhase.WIFI_WAKE ||
+            phase == LinkPhase.TRANSFER ||
+            phase == LinkPhase.WIFI_TEARDOWN
+        dropWifi(notifyClosed = true, closedReason = 0)
+        if (!wasWifi && cameraWasOpen) publishState()
+    }
+
+    private fun dropWifi(notifyClosed: Boolean, closedReason: Int) {
+        val active = phase == LinkPhase.WIFI_WAKE ||
+            phase == LinkPhase.TRANSFER ||
+            phase == LinkPhase.WIFI_TEARDOWN
+        when (phase) {
+            LinkPhase.WIFI_WAKE -> advance(LinkSignal.TIMEOUT)
+            LinkPhase.TRANSFER -> {
+                advance(LinkSignal.TIMEOUT)
+                if (phase == LinkPhase.WIFI_TEARDOWN) advance(LinkSignal.TIMEOUT)
+            }
+            LinkPhase.WIFI_TEARDOWN -> advance(LinkSignal.TIMEOUT)
+            else -> Unit
+        }
+        wifiSinceMs = null
+        if (active && notifyClosed) {
+            notifyStatus(encode(WifiClosed(closedReason)))
+            publishState()
+        }
     }
 
     private fun ack(sequence: Int, message: LinkMessage, requested: Boolean, status: AckStatus) {
@@ -318,7 +397,17 @@ class GlassSession(
         notifyStatus(encode(Ack(sequence, message.type, status)))
     }
 
+    private fun canNotify(): Boolean {
+        if (!bonded || attMtu < Limits.MIN_ATT_MTU) return false
+        return phase == LinkPhase.NEGOTIATING ||
+            phase == LinkPhase.BLE_READY ||
+            phase == LinkPhase.WIFI_WAKE ||
+            phase == LinkPhase.TRANSFER ||
+            phase == LinkPhase.WIFI_TEARDOWN
+    }
+
     private fun publishState() {
+        if (!canNotify()) return
         notifyStatus(
             encode(
                 StateReport(

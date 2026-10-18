@@ -23,6 +23,8 @@ iPhone はセントラルです。API は CoreBluetooth。
 
 再接続間隔は `RetrySchedule` のまま（1 秒から 15 秒）。`PhoneSession.scheduleRetry` の既定がこの待ちを `DispatchQueue.global` に載せる。アプリは差し替えてよい。
 
+再接続後の最初の `STATE` で手本ビットが落ちていれば、`PhoneSession` は直前に送った `EXEMPLAR_META` と `STROKE_PACK` を 1 回送り直す。ビットが残っていれば送らない。`WIFI_TIMEOUT` を受けたら Wi-Fi の相を `BLE_READY` に戻す。詳細は [phase-5.md](phase-5.md)。
+
 実装の対応表とモックパイプは [phase-2.md](phase-2.md)。
 
 ## Wi-Fi バースト

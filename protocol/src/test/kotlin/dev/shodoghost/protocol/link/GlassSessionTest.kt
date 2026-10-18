@@ -4,8 +4,12 @@ import dev.shodoghost.protocol.Ack
 import dev.shodoghost.protocol.AckStatus
 import dev.shodoghost.protocol.CalibMethod
 import dev.shodoghost.protocol.CalibrateCommit
+import dev.shodoghost.protocol.CameraState
 import dev.shodoghost.protocol.CaptureNow
+import dev.shodoghost.protocol.CaptureReady
 import dev.shodoghost.protocol.CaptureReason
+import dev.shodoghost.protocol.ErrorCode
+import dev.shodoghost.protocol.ErrorReport
 import dev.shodoghost.protocol.Hello
 import dev.shodoghost.protocol.HelloAck
 import dev.shodoghost.protocol.HudMode
@@ -20,10 +24,14 @@ import dev.shodoghost.protocol.PaperPoint
 import dev.shodoghost.protocol.PaperProfile
 import dev.shodoghost.protocol.PaperQuad
 import dev.shodoghost.protocol.PeerRole
+import dev.shodoghost.protocol.PowerPolicy
+import dev.shodoghost.protocol.RadioKind
+import dev.shodoghost.protocol.SleepHint
 import dev.shodoghost.protocol.BeginWifiSession
 import dev.shodoghost.protocol.EndWifiSession
 import dev.shodoghost.protocol.Ping
 import dev.shodoghost.protocol.Pong
+import dev.shodoghost.protocol.WifiClosed
 import dev.shodoghost.protocol.WifiPurpose
 import dev.shodoghost.protocol.Protocol
 import dev.shodoghost.protocol.SetMode
@@ -152,26 +160,152 @@ class GlassSessionTest {
         assertEquals(LinkPhase.BLE_READY, session.phase)
     }
 
-    private fun connect() {
-        session.startAdvertising()
+    @Test
+    fun powerPolicyKeepsWifiOffUnlessTransferring() {
+        assertEquals(false, PowerPolicy.PERSISTS_ACROSS_PROCESS_DEATH)
+        assertEquals(emptySet(), PowerPolicy.allows(LinkPhase.IDLE, cameraOpen = false, displayAsleep = false))
+        assertEquals(setOf(RadioKind.BLE), PowerPolicy.allows(LinkPhase.BLE_READY, false, false))
+        assertEquals(
+            setOf(RadioKind.BLE, RadioKind.CAMERA),
+            PowerPolicy.allows(LinkPhase.BLE_READY, cameraOpen = true, displayAsleep = false),
+        )
+        assertEquals(
+            setOf(RadioKind.BLE, RadioKind.WIFI, RadioKind.WAKE_LOCK),
+            PowerPolicy.allows(LinkPhase.TRANSFER, cameraOpen = false, displayAsleep = false),
+        )
+        assertEquals(setOf(RadioKind.BLE), PowerPolicy.allows(LinkPhase.WIFI_WAKE, false, displayAsleep = true))
+    }
+
+    @Test
+    fun displaySleepDropsWifiAndKeepsThePendingCapture() {
+        var now = 10_000L
+        val localRadio = RecordingRadio()
+        val local = GlassSession(localRadio, GlassListener(), nowMs = { now })
+        ready(local, localRadio)
+        local.publishCaptureReady(CaptureReady(4, 1, true, 2, 2))
+        write(local, BeginWifiSession(byteArrayOf(172.toByte(), 20, 10, 1), 9, ByteArray(Limits.WIFI_TOKEN_BYTES), WifiPurpose.UPLOAD_JPEG))
+        assertEquals(LinkPhase.WIFI_WAKE, local.phase)
+        assertEquals(setOf(RadioKind.BLE, RadioKind.WIFI, RadioKind.WAKE_LOCK), local.radios())
+        write(local, SleepHint(1_500))
+        now = 11_499
+        local.onClock()
+        assertEquals(LinkPhase.WIFI_WAKE, local.phase)
+        now = 11_500
+        local.onClock()
+        assertEquals(LinkPhase.BLE_READY, local.phase)
+        assertEquals(true, local.displayAsleep)
+        assertEquals(setOf(RadioKind.BLE), local.radios())
+        assertEquals(4L, local.pendingCapture?.jpegBytes)
+        assertEquals(0, localRadio.messages.filterIsInstance<ErrorReport>().size)
+        assertEquals(0, localRadio.messages.filterIsInstance<WifiClosed>().single().reason)
+        localRadio.messages.clear()
+        write(local, BeginWifiSession(byteArrayOf(172.toByte(), 20, 10, 1), 9, ByteArray(Limits.WIFI_TOKEN_BYTES), WifiPurpose.UPLOAD_JPEG))
+        assertEquals(AckStatus.BUSY, localRadio.messages.filterIsInstance<Ack>().single().status)
+        assertEquals(LinkPhase.BLE_READY, local.phase)
+    }
+
+    @Test
+    fun wifiHardTimeoutReportsAndReturnsToBle() {
+        var now = 10_000L
+        val localRadio = RecordingRadio()
+        val local = GlassSession(localRadio, GlassListener(), nowMs = { now })
+        ready(local, localRadio)
+        local.publishCaptureReady(CaptureReady(8, 2, true, 4, 4))
+        write(local, BeginWifiSession(byteArrayOf(10, 0, 0, 1), 9, ByteArray(Limits.WIFI_TOKEN_BYTES), WifiPurpose.UPLOAD_JPEG))
+        now = 10_000 + Limits.WIFI_HARD_TIMEOUT_MS - 1
+        local.onClock()
+        assertEquals(LinkPhase.WIFI_WAKE, local.phase)
+        now = 10_000 + Limits.WIFI_HARD_TIMEOUT_MS
+        local.onClock()
+        assertEquals(LinkPhase.BLE_READY, local.phase)
+        assertEquals(ErrorCode.WIFI_TIMEOUT, localRadio.messages.filterIsInstance<ErrorReport>().single().code)
+        assertEquals(8L, local.pendingCapture?.jpegBytes)
+        local.publishWifiReady(true)
+        assertEquals(LinkPhase.BLE_READY, local.phase)
+    }
+
+    @Test
+    fun deliveredJpegIsForgottenAndADisconnectKeepsIt() {
+        ready()
+        session.publishCaptureReady(CaptureReady(12, 3, true, 8, 8))
+        val token = ByteArray(Limits.WIFI_TOKEN_BYTES)
+        write(BeginWifiSession(byteArrayOf(172.toByte(), 20, 10, 1), 9, token, WifiPurpose.UPLOAD_JPEG))
+        write(EndWifiSession(0))
+        assertEquals(12L, session.pendingCapture?.jpegBytes)
+        write(BeginWifiSession(byteArrayOf(172.toByte(), 20, 10, 1), 9, token, WifiPurpose.UPLOAD_JPEG))
+        session.publishWifiReady(true)
+        assertEquals(LinkPhase.TRANSFER, session.phase)
+        write(EndWifiSession(0))
+        assertEquals(null, session.pendingCapture)
+    }
+
+    @Test
+    fun reconnectResendsHeldCaptureAndKeepsTheExemplarBit() {
+        ready()
+        val pack = StrokePack(
+            exemplarOrCritiqueId = 7,
+            packIndex = 0,
+            packCount = 1,
+            strokes = listOf(Stroke(InkLayer.SKELETON, 2, listOf(PaperPoint(0, 0), PaperPoint(1000, 1000)))),
+            correction = false,
+        )
+        session.onPayload(Protocol.encode(pack, sequence = 4, attMtu = Limits.PREFERRED_ATT_MTU).frames.single())
+        assertTrue(session.overlayBits and OverlayBits.EXEMPLAR != 0)
+        session.onLinkDown()
+        assertEquals(LinkPhase.BACKOFF, session.phase)
+        radio.messages.clear()
+        session.publishCaptureReady(CaptureReady(16, 4, true, 8, 8))
+        assertEquals(0, radio.messages.size)
         session.onBonded()
         session.onLinkUp(Limits.PREFERRED_ATT_MTU)
         assertEquals(LinkPhase.NEGOTIATING, session.phase)
+        write(Hello(Limits.PROTOCOL_VERSION, Limits.PREFERRED_ATT_MTU, PeerRole.PHONE_CENTRAL, ByteArray(Limits.NONCE_BYTES)))
+        val state = radio.messages.filterIsInstance<StateReport>().first()
+        assertTrue(state.overlayBits and OverlayBits.EXEMPLAR != 0)
+        assertEquals(16L, radio.messages.filterIsInstance<CaptureReady>().single().jpegBytes)
+        assertEquals(16L, session.pendingCapture?.jpegBytes)
     }
 
-    private fun ready() {
-        connect()
-        radio.status.clear()
+    @Test
+    fun cameraStaysClosedDuringWifiAndSleep() {
+        ready()
+        session.noteCamera(CameraState.OPEN)
+        assertEquals(setOf(RadioKind.BLE, RadioKind.CAMERA), session.radios())
+        session.noteDisplaySleep()
+        assertEquals(CameraState.CLOSED, session.camera)
+        assertEquals(setOf(RadioKind.BLE), session.radios())
+        session.noteDisplayOn()
+        write(BeginWifiSession(byteArrayOf(172.toByte(), 20, 10, 1), 9, ByteArray(Limits.WIFI_TOKEN_BYTES), WifiPurpose.UPLOAD_JPEG))
         radio.messages.clear()
+        session.noteCamera(CameraState.OPEN)
+        assertEquals(CameraState.CLOSED, session.camera)
+        assertEquals(ErrorCode.CAMERA_BUSY, radio.messages.filterIsInstance<ErrorReport>().single().code)
+    }
+
+    private fun connect(target: GlassSession = session) {
+        target.startAdvertising()
+        target.onBonded()
+        target.onLinkUp(Limits.PREFERRED_ATT_MTU)
+        assertEquals(LinkPhase.NEGOTIATING, target.phase)
+    }
+
+    private fun ready(target: GlassSession = session, targetRadio: RecordingRadio = radio) {
+        connect(target)
+        targetRadio.status.clear()
+        targetRadio.messages.clear()
         val nonce = ByteArray(Limits.NONCE_BYTES)
-        write(Hello(Limits.PROTOCOL_VERSION, Limits.PREFERRED_ATT_MTU, PeerRole.PHONE_CENTRAL, nonce))
-        radio.status.clear()
-        radio.messages.clear()
+        write(target, Hello(Limits.PROTOCOL_VERSION, Limits.PREFERRED_ATT_MTU, PeerRole.PHONE_CENTRAL, nonce))
+        targetRadio.status.clear()
+        targetRadio.messages.clear()
     }
 
     private fun write(message: dev.shodoghost.protocol.LinkMessage) {
+        write(session, message)
+    }
+
+    private fun write(target: GlassSession, message: dev.shodoghost.protocol.LinkMessage) {
         val frame = Protocol.encode(message, sequence = 3, attMtu = Limits.PREFERRED_ATT_MTU).frames.single()
-        session.onCommand(frame)
+        target.onCommand(frame)
     }
 
     private class RecordingRadio : GlassRadio {

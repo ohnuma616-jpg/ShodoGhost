@@ -116,3 +116,29 @@ public enum LinkStateMachine {
         }
     }
 }
+
+public enum RadioKind: Hashable, Sendable {
+    case ble
+    case wifi
+    case wakeLock
+    case camera
+}
+
+/// どの相でどのラジオを持ってよいか。実機の mAh は測っていない。プロセスをまたいでは残さない。
+public enum PowerPolicy {
+    public static let persistsAcrossProcessDeath = false
+
+    public static func allows(phase: LinkPhase, cameraOpen: Bool, displayAsleep: Bool) -> Set<RadioKind> {
+        if phase == .idle { return [] }
+        var held: Set<RadioKind> = [.ble]
+        let transferring = phase == .wifiWake || phase == .transfer
+        if transferring && !displayAsleep {
+            held.insert(.wifi)
+            held.insert(.wakeLock)
+        }
+        if cameraOpen && phase == .bleReady && !displayAsleep {
+            held.insert(.camera)
+        }
+        return held
+    }
+}

@@ -64,6 +64,9 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
     private var nonce: [UInt8] = []
     private var pendingAck: [Int: MessageType] = [:]
     private var stopped = false
+    private var storedLesson: StoredLesson?
+    private var replayLesson = false
+    private var pendingReplay: StoredLesson?
 
     public init(radio: PhoneRadio) {
         self.radio = radio
@@ -103,6 +106,9 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
     }
 
     public func sendExemplar(_ meta: ExemplarMeta, packs: [StrokePack]) throws {
+        lock.lock()
+        storedLesson = StoredLesson(meta: meta, packs: packs)
+        lock.unlock()
         try send(.exemplarMeta(meta), channel: .command)
         for pack in packs {
             try send(.strokePack(pack), channel: .payload)
@@ -180,6 +186,7 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
     public func radioDidNotifyStatus(_ bytes: [UInt8]) {
         let events = absorb(bytes, assembler: statusIn)
         deliver(events)
+        replayLessonIfNeeded()
     }
 
     public func radioDidNotifyPayload(_ bytes: [UInt8]) {
@@ -328,11 +335,18 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
             if ack.accept && ack.nonce == nonce {
                 advanceLocked(.helloOk)
                 retryAttempt = 0
+                replayLesson = storedLesson != nil
             } else {
                 advanceLocked(.helloRejected)
             }
             return [.helloAck(ack)]
         case .state(let state):
+            if state.overlayBits & OverlayBits.exemplar != 0 {
+                replayLesson = false
+            } else if replayLesson, let lesson = storedLesson {
+                replayLesson = false
+                pendingReplay = lesson
+            }
             return [.state(state)]
         case .touch(let touch):
             return [.touch(touch)]
@@ -350,6 +364,9 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
             }
             return [.ack(ack)]
         case .error(let error):
+            if error.code == .wifiTimeout {
+                leaveWifiLocked()
+            }
             return [.error(error)]
         case .wifiReady(let ready):
             if ready.ok { advanceLocked(.socketUp) }
@@ -383,6 +400,15 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
         if storedPhase == .wifiTeardown { advanceLocked(.wifiTornDown) }
     }
 
+    private func replayLessonIfNeeded() {
+        lock.lock()
+        let lesson = pendingReplay
+        pendingReplay = nil
+        lock.unlock()
+        guard let lesson else { return }
+        try? sendExemplar(lesson.meta, packs: lesson.packs)
+    }
+
     private func advanceLocked(_ signal: LinkSignal) {
         let step = LinkStateMachine.step(phase: storedPhase, signal: signal)
         guard step.accepted else { return }
@@ -401,5 +427,10 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
         case command
         case touch
         case payload
+    }
+
+    private struct StoredLesson {
+        let meta: ExemplarMeta
+        let packs: [StrokePack]
     }
 }
