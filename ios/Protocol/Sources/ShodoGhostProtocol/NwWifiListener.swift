@@ -25,14 +25,14 @@ public final class NwWifiListener: WifiBurstLink, @unchecked Sendable {
         let parameters = NWParameters.tcp
         parameters.allowLocalEndpointReuse = true
         let listener = try NWListener(using: parameters, on: nwPort)
-        let ready = DispatchSemaphore(value: 0)
-        var listenError: NWError?
+        let ready = NetSignal()
         listener.stateUpdateHandler = { state in
             switch state {
             case .ready:
                 ready.signal()
             case .failed(let error):
-                listenError = error
+                ready.error = error
+                ready.fail()
                 ready.signal()
             default:
                 break
@@ -42,7 +42,7 @@ public final class NwWifiListener: WifiBurstLink, @unchecked Sendable {
             self?.take(connection)
         }
         listener.start(queue: queue)
-        if ready.wait(timeout: .now() + 5) == .timedOut || listenError != nil {
+        if !ready.wait(5) || ready.failed {
             listener.cancel()
             throw ProtocolError(.wifiTimeout, "listen")
         }
@@ -68,21 +68,20 @@ public final class NwWifiListener: WifiBurstLink, @unchecked Sendable {
 
     public func receive(token: [UInt8], expect: CaptureReady, timeoutSeconds: Double) throws -> [UInt8] {
         let connection = try nextConnection(timeoutSeconds)
-        let ready = DispatchSemaphore(value: 0)
-        var failed = false
+        let ready = NetSignal()
         connection.stateUpdateHandler = { state in
             switch state {
             case .ready:
                 ready.signal()
             case .failed:
-                failed = true
+                ready.fail()
                 ready.signal()
             default:
                 break
             }
         }
         connection.start(queue: queue)
-        if ready.wait(timeout: .now() + timeoutSeconds) == .timedOut || failed {
+        if !ready.wait(timeoutSeconds) || ready.failed {
             connection.cancel()
             throw ProtocolError(.wifiTimeout, "accept")
         }
@@ -131,32 +130,44 @@ public final class NwWifiListener: WifiBurstLink, @unchecked Sendable {
         if count == 0 { return [] }
         var out: [UInt8] = []
         while out.count < count {
-            let wait = DispatchSemaphore(value: 0)
-            var chunk: [UInt8] = []
-            var failed = false
+            let chunk = NetSignal()
             connection.receive(minimumIncompleteLength: 1, maximumLength: count - out.count) { data, _, isComplete, error in
-                if let data { chunk = [UInt8](data) }
-                if error != nil || (isComplete && chunk.isEmpty) { failed = true }
-                wait.signal()
+                if let data { chunk.bytes = [UInt8](data) }
+                if error != nil || (isComplete && chunk.bytes.isEmpty) { chunk.fail() }
+                chunk.signal()
             }
-            if wait.wait(timeout: .now() + timeoutSeconds) == .timedOut || failed || chunk.isEmpty {
+            if !chunk.wait(timeoutSeconds) || chunk.failed || chunk.bytes.isEmpty {
                 throw ProtocolError(.wifiTimeout, "read")
             }
-            out.append(contentsOf: chunk)
+            out.append(contentsOf: chunk.bytes)
         }
         return out
     }
 
     private func writeAll(_ connection: NWConnection, _ bytes: [UInt8], _ timeoutSeconds: Double) throws {
-        let wait = DispatchSemaphore(value: 0)
-        var failed = false
+        let done = NetSignal()
         connection.send(content: Data(bytes), completion: .contentProcessed { error in
-            failed = error != nil
-            wait.signal()
+            if error != nil { done.fail() }
+            done.signal()
         })
-        if wait.wait(timeout: .now() + timeoutSeconds) == .timedOut || failed {
+        if !done.wait(timeoutSeconds) || done.failed {
             throw ProtocolError(.wifiTimeout, "write")
         }
+    }
+}
+
+private final class NetSignal: @unchecked Sendable {
+    private let semaphore = DispatchSemaphore(value: 0)
+    var failed = false
+    var error: NWError?
+    var bytes: [UInt8] = []
+
+    func fail() { failed = true }
+
+    func signal() { semaphore.signal() }
+
+    func wait(_ seconds: Double) -> Bool {
+        semaphore.wait(timeout: .now() + seconds) == .success
     }
 }
 #endif

@@ -164,7 +164,7 @@ enum LanAddress {
         while let iface = cursor {
             defer { cursor = iface.pointee.ifa_next }
             guard let addr = iface.pointee.ifa_addr, addr.pointee.sa_family == UInt8(AF_INET) else { continue }
-            var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+            var host = [CChar](repeating: 0, count: 1025)
             let rc = getnameinfo(addr, socklen_t(addr.pointee.sa_len), &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST)
             if rc != 0 { continue }
             let text = String(cString: host)
