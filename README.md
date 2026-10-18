@@ -65,7 +65,7 @@ swift test --package-path ios/Protocol
 RayNeo 公式資料（X3 Pro、2025年の開発者ドキュメント）に合わせています。
 
 - Snapdragon AR1 Gen 1、RayNeo AIOS。接続した X3 Pro（ARGF20 / MercuryLiteXR）は `ro.build.version.release` 12、`ro.build.version.sdk` 32（Android 12L）
-- 両眼フルカラー MicroLED、回折導波路、FOV 30°、約 3,500 nit（ピーク 6,000）。実機の `wm size` は 1280×480、`wm density` は 160（1dp = 1px）
+- 両眼フルカラー MicroLED、回折導波路、FOV 30°、約 3,500 nit（ピーク 6,000）。実機の `wm size` は 1280×480、`wm density` は 160（1dp = 1px）。Unity の確認用 APK でも `Screen` は 1280×480 で、左右に同じ3本の線が見えた
 - 論理画面は1枚。素の Android UI は左右に割れるので、640×480 を描いて両眼へ複製する。密度 160 なので、dp で組んでも物理ピクセルと一致する
 - カメラは2台、どちらも背面。静止画は `device@3.7/legacy/0`（4032×3024、焦点距離 1.90mm）を1枚だけ開く。`legacy/1`（640×480、焦点距離 0.71mm）は空間用の広角で、`WebCamTexture` では開かない
 - 3マイク、テンプルの前後上下スワイプとタップ、245mAh、Wi-Fi 6、Bluetooth 5.2 / 5.3（資料によって表記が分かれる）
