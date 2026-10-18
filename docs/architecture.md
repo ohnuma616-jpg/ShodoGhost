@@ -4,25 +4,26 @@
 
 | 場所 | 採用 | 理由 |
 | --- | --- | --- |
-| 共通契約 | Kotlin / JVM、`:protocol` | UUID、CRC、パケット、状態機械をグラスとスマホで二重に書かない |
+| グラス側契約 | Kotlin / JVM、`:protocol` | グラスアプリがリンクする。Android 依存は入れない |
 | グラス | Kotlin、Android View、640×480 の Canvas | 公式のシステムアプリは 0DoF。Unity の常時 SLAM は 245mAh とカメラ排他に合わない |
-| スマホ | Kotlin、後続フェーズで Android アプリ | BLE の Foreground Service と `:protocol` をそのままリンクできる |
-| 添削 | スマホ上の `AnalysisBackend` | 重い処理はグラスの外。Python（OpenCV + VLM）はその実装の一つで、グラスの通信相手にはしない |
+| iPhone 側契約 | Swift 6、`ios/Protocol` | CoreBluetooth からそのまま呼ぶ。バイト列は `fixtures/canonical.txt` で Kotlin と一致させる |
+| iPhone アプリ | SwiftUI、iOS 17 以降。Phase 4 | セントラル、設定、添削。詳細は [iphone.md](iphone.md) |
+| 添削 | iPhone 上の `AnalysisBackend` | 重い処理はグラスの外。Python（OpenCV + VLM）はその実装の一つで、グラスの通信相手にはしない |
 
-Flutter はスマホ UI としては候補だった。GATT と CRC を Dart に移植すると契約が割れるので、このリポジトリでは採らない。
+スマホは iPhone です。バックグラウンドの BLE 状態復元と、練習中だけのローカル待受は CoreBluetooth と Network.framework を直接呼びます。
 
 グラスの minSdk は Android 12（API 31）に合わせる。コンパイルは API 34 を予定する。GMS は使わない。依存禁止は `play-services-*`、`firebase-*`、Maps SDK、Fused Location Provider、広告 SDK。
 
 ## 役割
 
 ```text
-テンプル / 音声PTT          スマホ Foreground Service           任意の LAN
+テンプル / 音声PTT          iPhone（前面の練習画面）         任意の LAN
         |                         |                              |
         v                         v                              v
-  グラス (Kotlin HUD)  --BLE-->  コンパニオン  --任意-->  Python 添削
+  グラス (Kotlin HUD)  --BLE-->  SwiftUI アプリ  --任意-->  Python 添削
         ^                         |
         +---- Wi-Fi 短時間 -------+
-              JPEG だけ
+              JPEG だけ。アプリが前面のとき
 ```
 
 グラスがやること:
@@ -32,9 +33,10 @@ Flutter はスマホ UI としては候補だった。GATT と CRC を Dart に�
 - 指示があったときだけ IMX681 を開き、JPEG を1枚取って閉じる
 - BLE で状態を通知し、Wi-Fi バーストの間だけ WakeLock を持つ
 
-スマホがやること:
+iPhone がやること:
 
-- スキャン、再接続、バックオフ、Foreground Service
+- CoreBluetooth セントラル、再接続、バックオフ。バックグラウンドは `bluetooth-central` の状態復元
+- 練習画面が前面のあいだだけ `NWListener` で JPEG を受ける
 - 手本ライブラリ、用紙プロファイル、アカウント、文字入力
 - JPEG を受け、`AnalysisBackend` に渡す
 - 添削のポリラインと2行の文をグラスへ返す
@@ -91,13 +93,13 @@ Python が止まっていても、スマホ内のモック実装で線と定型�
 | `TempleInputSink` | グラス | `TempleAction`。デスク検証ではキー入力 |
 | `CameraCaptureAdapter` | グラス | Camera2。ワンショット |
 | `PlaneAnchorAdapter` | グラス | Unity または Mercury の SLAM。既定は未実装で `available = false` |
-| `AnalysisBackend` | スマホ | モック、または LAN の Python |
+| `AnalysisBackend` | iPhone | モック、または LAN の Python |
 
 `BinocularPresenter` は 640×480 を1枚受け取る。1280×480 のレイアウトをアプリが直接組むことは契約にない。
 
 ## セキュリティ
 
-- スマホは接続後にボンディングを要求する。HELLO より前の Command 書き込みはグラスが捨てる
+- iPhone は接続後にペアリングする。HELLO より前の Command 書き込みはグラスが捨てる。iOS は暗号化が必要な Characteristic へ最初に触れたとき、システム UI でペアリングを出す
 - HELLO の 8byte nonce を ACK がエコーする
 - Wi-Fi トークンはバーストごとに 16byte。使い切り
 - ローカル WebSocket は平文。LAN の WPA に依存する。グラスに証明書 UI を出さないための判断

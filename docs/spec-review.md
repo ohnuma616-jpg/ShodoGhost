@@ -28,7 +28,7 @@
 
 仕様: サーバはローカル PC の Python。通信は Wi-Fi 6 / WebSocket。
 
-採用: グラスの通信相手はスマホだけ。Python はスマホの `AnalysisBackend` 実装であり、同じ LAN にいるときだけスマホが転送する。
+採用: グラスの通信相手は iPhone だけ。Python は iPhone の `AnalysisBackend` 実装であり、同じ LAN か iPhone のホットスポットにいるときだけ iPhone が転送する。待受は練習画面が前面のあいだだけ開く。
 
 根拠: スリープでグラスの Wi-Fi ソケットは切れる。グラスにキーボードが無く、PC のアドレスをグラスへ入力できない。Wi-Fi 6 である必要はなく、通常の TCP WebSocket で足りる。
 

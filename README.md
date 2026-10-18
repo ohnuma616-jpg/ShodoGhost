@@ -6,8 +6,9 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 
 ## このフェーズで固定したこと
 
-- グラスもスマホも Kotlin。パケット、GATT UUID、リンク状態機械は `:protocol` に1つだけ置く。
-- グラスは GATT ペリフェラル、スマホは GATT セントラル。
+- グラスは Kotlin。スマホは iPhone（Swift / SwiftUI、iOS 17）。
+- パケットのバイト列は `:protocol`（グラス）と `ios/Protocol`（iPhone）の両方にあり、`fixtures/canonical.txt` で一致させる。
+- グラスは GATT ペリフェラル、iPhone は CoreBluetooth のセントラル。
 - 常時つなぐのは BLE。JPEG のときだけ WakeLock を取って Wi-Fi の WebSocket を短時間開く。
 - 既定の表示は 0DoF の 2D HUD。6DoF / SLAM はアダプタの裏で、既定ビルドでは使わない。
 - 背景 `#000000` は消灯（透過）。線は 2px 以上。文字は 640×480 の内側 10% に置く。
@@ -20,6 +21,7 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 | 文書 | 内容 |
 | --- | --- |
 | [docs/architecture.md](docs/architecture.md) | スタック、役割、アダプタ、電力 |
+| [docs/iphone.md](docs/iphone.md) | iPhone の BLE バックグラウンド、Wi-Fi、権限 |
 | [docs/spec-review.md](docs/spec-review.md) | 仕様書の見直し |
 | [docs/ble-gatt.md](docs/ble-gatt.md) | Custom Service と Characteristic |
 | [docs/packet-format.md](docs/packet-format.md) | フレーム、メッセージ、分割 |
@@ -36,6 +38,14 @@ JDK 21。リポジトリ直下で:
 ```
 
 テストは CRC、フレーム往復、制御メッセージが ATT MTU 185 の1フレームに収まること、筆画パックの分割と順不同再構成、半紙四隅の射影、リンク状態機械を見ます。
+
+iPhone 側の同じ契約は Swift パッケージです。Swift 6 のツールチェーンで:
+
+```bash
+swift test --package-path ios/Protocol
+```
+
+このテストは `fixtures/canonical.txt` を復号し、再符号化して Kotlin のバイト列と一致することを確認します。
 
 ## ハードウェア前提
 

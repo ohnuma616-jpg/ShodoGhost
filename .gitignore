@@ -1,5 +1,7 @@
 .gradle/
 build/
+.build/
+.swiftpm/
 .idea/
 *.iml
 local.properties

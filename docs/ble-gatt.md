@@ -26,7 +26,7 @@ Status と Payload に Client Characteristic Configuration Descriptor `00002902-
 1. グラスは Activity が resumed のあいだ広告する。消灯でプロセスが止まれば広告も止まる。これは未接続として扱う
 2. スマホは Service UUID でフィルタしてスキャンする
 3. 接続後、ボンディングを要求する。完了前の Command はグラスが捨てる
-4. `requestMtu(247)`。合意した ATT MTU が 185 未満なら HELLO を送らず `BACKOFF`（`ErrorCode.MTU_TOO_SMALL`）
+4. MTU。グラス（Android ペリフェラル）は `requestMtu(247)` を出してよい。iPhone は `requestMtu` を持たず、接続時にシステムが交換する。セントラルは `CBPeripheral.maximumWriteValueLength(for: .withResponse)` を見る。値が 182 未満（ATT MTU 185 未満）なら HELLO を送らず `BACKOFF`（`ErrorCode.MTU_TOO_SMALL`）。iOS の既定は 185 前後で、この下限と揃っている
 5. サービス探索、Status と Payload の Notify を有効化、SessionInfo を Read
 6. Command に `HELLO`。Status の `HELLO_ACK` で `BLE_READY`
 7. 接続優先度は BALANCED。バースト中も BLE を HIGH にしない。大量データは Wi-Fi 側

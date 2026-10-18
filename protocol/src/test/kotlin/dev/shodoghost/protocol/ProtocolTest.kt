@@ -1,5 +1,6 @@
 package dev.shodoghost.protocol
 
+import java.io.File
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -223,6 +224,17 @@ class ProtocolTest {
     }
 
     @Test
+    fun canonicalFixtureMatchesEncoder() {
+        val file = repoRoot().resolve("fixtures/canonical.txt")
+        val text = renderCanonicalFixtures()
+        if (!file.exists()) {
+            file.parentFile.mkdirs()
+            file.writeText(text)
+        }
+        assertEquals(text, file.readText())
+    }
+
+    @Test
     fun messageTypeCodesAreUnique() {
         val codes = MessageType.entries.map { it.code }
         assertEquals(codes.size, codes.toSet().size)
@@ -247,6 +259,85 @@ class ProtocolTest {
         assertEquals(effects.toList(), step.effects)
         return step.phase
     }
+
+    private fun repoRoot(): File {
+        val start = File(System.getProperty("user.dir")).absoluteFile
+        var dir: File? = start
+        while (dir != null) {
+            if (File(dir, "settings.gradle.kts").exists()) return dir
+            dir = dir.parentFile
+        }
+        error("settings.gradle.kts not found from $start")
+    }
+
+    private fun renderCanonicalFixtures(): String = buildString {
+        var sequence = 1
+        for (message in controlMessages()) {
+            val outbound = Protocol.encode(message, sequence, Limits.MIN_ATT_MTU)
+            appendLine("VECTOR ${message.type.name}")
+            appendLine("SEQUENCE $sequence")
+            appendLine("MTU ${Limits.MIN_ATT_MTU}")
+            for (frame in outbound.frames) appendLine("FRAME ${frame.toHex()}")
+            appendLine("END")
+            sequence = outbound.nextSequence
+        }
+        val pack = sampleStrokePack()
+        val outbound = Protocol.encode(pack, 10, Limits.MIN_ATT_MTU)
+        appendLine("VECTOR ${pack.type.name}")
+        appendLine("SEQUENCE 10")
+        appendLine("MTU ${Limits.MIN_ATT_MTU}")
+        for (frame in outbound.frames) appendLine("FRAME ${frame.toHex()}")
+        appendLine("END")
+    }
+
+    private fun controlMessages(): List<LinkMessage> {
+        val nonce = ByteArray(Limits.NONCE_BYTES) { it.toByte() }
+        val token = ByteArray(Limits.WIFI_TOKEN_BYTES) { (it + 3).toByte() }
+        val quad = PaperQuad(
+            HudPoint(1000, 1200),
+            HudPoint(9000, 1400),
+            HudPoint(8600, 8800),
+            HudPoint(1400, 8600),
+        )
+        return listOf(
+            Hello(Limits.PROTOCOL_VERSION, Limits.PREFERRED_ATT_MTU, PeerRole.PHONE_CENTRAL, nonce),
+            HelloAck(1, true, 80, Thermal.OK, 3900, HwFlags.MAIN_CAMERA or HwFlags.WIFI, nonce),
+            SetMode(HudMode.TRACE, PaperProfile.HANSHI),
+            ExemplarMeta(42, 3, 120, InkLayer.SKELETON.code),
+            CalibrateStart(CalibMethod.ONE_SHOT, 8),
+            CalibrateCommit(CalibMethod.ONE_SHOT, quad, 242, 333),
+            CaptureNow(CaptureReason.TEMPLE, 85),
+            ShowAdvice(listOf("起筆を垂直に", "ハネを短く")),
+            ClearOverlay(OverlayBits.ALL),
+            BeginWifiSession(byteArrayOf(192.toByte(), 168.toByte(), 1, 20), 18765, token, WifiPurpose.UPLOAD_AND_RESULT),
+            EndWifiSession(0),
+            Ping(0x11223344),
+            Pong(0x11223344, 15),
+            SetHud(180, 2, true),
+            SleepHint(1500),
+            StateReport(HudMode.TRACE, LinkPhase.BLE_READY, Thermal.WARM, 70, CameraState.CLOSED, OverlayBits.EXEMPLAR, 3800),
+            TouchReport(TouchAction.LONG_PRESS, 1200),
+            CaptureReady(120_000, 0xCBF43926, true, 4000, 3000),
+            ErrorReport(ErrorCode.THERMAL, "hot"),
+            Ack(9, MessageType.CAPTURE_NOW, AckStatus.OK),
+            WifiReady(true),
+            WifiClosed(1),
+            SessionInfo(1, HwFlags.MAIN_CAMERA, 70, Thermal.OK, LinkPhase.BLE_READY),
+        )
+    }
+
+    private fun sampleStrokePack(): StrokePack {
+        val strokes = List(20) { index ->
+            Stroke(
+                layer = if (index % 2 == 0) InkLayer.SKELETON else InkLayer.CONTOUR,
+                widthPx = 2,
+                points = List(30) { point -> PaperPoint(point * 100, index * 200) },
+            )
+        }
+        return StrokePack(99, 0, 1, strokes, correction = false)
+    }
+
+    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 
     private fun assertClose(expected: HudPoint, actual: HudPoint) {
         assertTrue(kotlin.math.abs(expected.x - actual.x) <= 1, "x ${actual.x} vs ${expected.x}")
