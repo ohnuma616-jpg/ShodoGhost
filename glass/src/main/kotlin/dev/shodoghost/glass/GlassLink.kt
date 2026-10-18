@@ -308,13 +308,30 @@ class GlassLink(
 
     private fun dispatch(device: BluetoothDevice, id: UUID, value: ByteArray) {
         noteBond(device)
-        when (id.toString()) {
+        val uuid = id.toString()
+        if (uuid == GattProfile.COMMAND || uuid == GattProfile.TOUCH || uuid == GattProfile.PAYLOAD) {
+            session.onBonded()
+            wakeForWrite()
+        }
+        when (uuid) {
             GattProfile.COMMAND -> session.onCommand(value)
             GattProfile.TOUCH -> session.onTouch(value)
             GattProfile.PAYLOAD -> session.onPayload(value)
             else -> Unit
         }
         publishPhase()
+    }
+
+    /** MTU 通知が再接続で来ないことがある。書けた時点でリンクは生きている。 */
+    private fun wakeForWrite() {
+        val phase = session.phase
+        if (phase == LinkPhase.IDLE ||
+            phase == LinkPhase.DISCOVERING ||
+            phase == LinkPhase.CONNECTING ||
+            phase == LinkPhase.BACKOFF
+        ) {
+            session.onLinkUp(Limits.MIN_ATT_MTU)
+        }
     }
 
     private fun noteBond(device: BluetoothDevice) {

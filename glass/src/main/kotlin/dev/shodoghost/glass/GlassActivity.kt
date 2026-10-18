@@ -39,7 +39,7 @@ class GlassActivity : Activity() {
         link = GlassLink(
             this,
             onCapture = ::capture,
-            onPhase = { phase -> runOnUiThread { show(phase) } },
+            onPhase = { phase -> runOnUiThread { show(phase, advice = listOf(phaseWord(phase))) } },
             onStatus = ::note,
         )
         shot = GlassStillShot(link.session, LegacyStillCapture(AndroidStillCamera()))
@@ -73,6 +73,18 @@ class GlassActivity : Activity() {
         link.close()
         worker.shutdown()
         super.onDestroy()
+    }
+
+    private fun phaseWord(phase: LinkPhase): String = when (phase) {
+        LinkPhase.IDLE -> "停止"
+        LinkPhase.DISCOVERING -> "待受"
+        LinkPhase.CONNECTING -> "接続中"
+        LinkPhase.NEGOTIATING -> "折衝"
+        LinkPhase.BLE_READY -> "準備完了"
+        LinkPhase.WIFI_WAKE -> "無線"
+        LinkPhase.TRANSFER -> "転送"
+        LinkPhase.WIFI_TEARDOWN -> "切断中"
+        LinkPhase.BACKOFF -> "再接続"
     }
 
     private fun note(text: String) {
