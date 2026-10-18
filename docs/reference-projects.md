@@ -9,7 +9,7 @@
 
 ## 契約に取り込む事実
 
-物理フレームバッファは 1280×480 で、論理画面は片眼 640×480。同じ絵を左右へ出す。
+物理フレームバッファは 1280×480 で、論理画面は片眼 640×480。同じ絵を左右へ出す。接続した X3 Pro の `wm size` は 1280×480、`wm density` は 160 だった。
 
 - FixLensAR の `Assets/Scripts/BinocularSbsUi.cs` は、Canvas を左半分と右半分に分け、左の3段 UI を右へ複製する。
 - TapInsight の `tapbrowser/.../BinocularSbsLayout.kt` は、子を1つだけ受け、物理幅の半分で測ってから左右へ2回描く。Mercury SDK の `com.ffalcon.mercury.android.sdk.ui.wiget.MirroringView` が使えるときはそちらへ委譲する。クラス名の `wiget` は SDK 側の綴り。
