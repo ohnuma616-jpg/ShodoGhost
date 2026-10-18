@@ -37,6 +37,8 @@ public struct HudFrame: Equatable, Sendable {
     public let showCrosshair: Bool
     public let warning: String?
     public let lineWidthPx: Int
+    public let mode: HudMode
+    public let paper: PaperProfile
 
     public init(
         strokes: [Stroke],
@@ -44,7 +46,9 @@ public struct HudFrame: Equatable, Sendable {
         advice: [String],
         showCrosshair: Bool,
         warning: String?,
-        lineWidthPx: Int
+        lineWidthPx: Int,
+        mode: HudMode = .trace,
+        paper: PaperProfile = .hanshi
     ) throws {
         guard (Limits.minLinePx...Limits.maxLinePx).contains(lineWidthPx) else {
             throw ProtocolError(.badFrame, "line width")
@@ -61,6 +65,8 @@ public struct HudFrame: Equatable, Sendable {
         self.showCrosshair = showCrosshair
         self.warning = warning
         self.lineWidthPx = lineWidthPx
+        self.mode = mode
+        self.paper = paper
     }
 }
 

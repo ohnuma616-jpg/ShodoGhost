@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 2 まででリポジトリにあるもの:
+Phase 3 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -18,6 +18,7 @@ shodo-ghost/
     iphone.md
     directory-layout.md
     phase-2.md
+    phase-3.md
   scripts/
     loopback-check.sh      TCP のグラス役と Swift の往復試験
   protocol/
@@ -39,9 +40,14 @@ shodo-ghost/
       link/GlassSession.kt GATT サーバが委譲するセッション
       link/AttFraming.kt   テスト用のモックパイプ。オンエアではない
       loopback/LoopbackGlassHost.kt
+      hud/HudBitmap.kt     640×480、文字セーフと光学クリップ
+      hud/HudPaint.kt      太線と二値の文字
+      hud/HudRenderer.kt   モード別の配置、左右複製
+      hud/PracticeHud.kt   TouchAction から練習状態へ
     src/test/kotlin/dev/shodoghost/protocol/
       ProtocolTest.kt
       link/GlassSessionTest.kt
+      hud/HudRendererTest.kt
 ```
 
 iPhone 側:
@@ -57,20 +63,20 @@ fixtures/canonical.txt Kotlin が書いたバイト列。Swift が再符号化�
 後続フェーズで足す予定。今は作らない。
 
 ```text
-glass/          Phase 3  Kotlin Android。View と Canvas。MercurySDK は adapter 実装だけが参照
+glass/          実機の Activity。SDK が届いてから。View と Canvas。MercurySDK は adapter 実装だけが参照
 ios/App/        Phase 4  SwiftUI
 server/         Phase 4 の任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
 ```
 
-`:protocol` は Android プラグインを適用しない。Phase 3 のグラスが `api(project(":protocol"))` する。iPhone は `ios/Protocol` を Swift Package としてリンクする。中身を Kotlin Multiplatform にはしない。iOS 向けの Kotlin/Native はこの Linux 環境で検証できないため、Swift で書いてバイト列を固定する。
+`:protocol` は Android プラグインを適用しない。実機のグラスが `api(project(":protocol"))` する。iPhone は `ios/Protocol` を Swift Package としてリンクする。中身を Kotlin Multiplatform にはしない。iOS 向けの Kotlin/Native はこの Linux 環境で検証できないため、Swift で書いてバイト列を固定する。
 
 ## フェーズ境界
 
 | フェーズ | 状態 | 中身 |
 | --- | --- | --- |
 | 1 | 済み | 契約、シーケンス、見直し、Kotlin と Swift の符号器 |
-| 2 | ここ | `GlassSession` と `PhoneSession`。TCP ループバックで往復。Android GATT モジュールは未作成 |
-| 3 | 未着手 | 透過 HUD、セーフエリア、タッチを `TouchAction` へ |
+| 2 | 済み | `GlassSession` と `PhoneSession`。TCP ループバックで往復。Android GATT モジュールは未作成 |
+| 3 | ここ | 640×480 の HUD と `PracticeHud`。Android の Activity は未作成 |
 | 4 | 未着手 | SwiftUI、前面の練習画面での待受、`AnalysisBackend` |
 | 5 | 未着手 | スリープ復帰の実機調整、再接続、計測に基づく省電力 |
 

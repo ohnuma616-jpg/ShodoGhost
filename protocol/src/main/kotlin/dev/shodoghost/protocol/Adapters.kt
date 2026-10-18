@@ -56,6 +56,8 @@ data class HudFrame(
     val showCrosshair: Boolean,
     val warning: String?,
     val lineWidthPx: Int,
+    val mode: HudMode = HudMode.TRACE,
+    val paper: PaperProfile = PaperProfile.HANSHI,
 ) {
     init {
         require(lineWidthPx in Limits.MIN_LINE_PX..Limits.MAX_LINE_PX)

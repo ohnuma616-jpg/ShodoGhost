@@ -12,6 +12,7 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    systemProperty("java.awt.headless", "true")
 }
 
 tasks.register<JavaExec>("loopback") {
