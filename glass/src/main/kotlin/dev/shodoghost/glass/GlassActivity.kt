@@ -5,8 +5,6 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Handler
-import android.os.HandlerThread
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -18,16 +16,17 @@ import dev.shodoghost.protocol.hud.DeskMirrorPresenter
 import dev.shodoghost.protocol.hud.bringUpFrame
 import dev.shodoghost.protocol.hud.installHudGlyphs
 import java.io.File
+import java.util.concurrent.Executors
 
 /**
  * 640×480 を左右へ出す。撮影は iPhone の CAPTURE_NOW が来てから、ロックの外で 1 枚。
- * 撮影スレッドは Looper を持つ。Camera のコールバックはそこへ届く。
+ * 撮影の待ちは Looper を持たないスレッドで行う。カメラのコールバックは別スレッドが受ける。
  */
 class GlassActivity : Activity() {
     private val presenter = DeskMirrorPresenter()
     private val view by lazy { HudView(this) }
-    private val cameraThread = HandlerThread("shodo-camera").apply { start() }
-    private val cameraHandler = Handler(cameraThread.looper)
+    private val worker = Executors.newSingleThreadExecutor()
+    private val stillCamera = AndroidStillCamera()
     private lateinit var link: GlassLink
     private lateinit var shot: GlassStillShot
     private var bottom = "起動"
@@ -45,7 +44,7 @@ class GlassActivity : Activity() {
             onPhase = { phase -> runOnUiThread { onPhase(phase) } },
             onStatus = ::note,
         )
-        shot = GlassStillShot(link.session, LegacyStillCapture(AndroidStillCamera()))
+        shot = GlassStillShot(link.session, LegacyStillCapture(stillCamera))
         show(LinkPhase.IDLE)
         setContentView(view)
     }
@@ -74,7 +73,8 @@ class GlassActivity : Activity() {
 
     override fun onDestroy() {
         link.close()
-        cameraThread.quit()
+        worker.shutdown()
+        stillCamera.closeThread()
         super.onDestroy()
     }
 
@@ -116,7 +116,7 @@ class GlassActivity : Activity() {
             bottom = "撮影"
             show(link.session.phase)
         }
-        cameraHandler.post {
+        worker.execute {
             try {
                 val still = shot.take(request.jpegQuality)
                 File(filesDir, STILL_NAME).writeBytes(still.jpeg)
