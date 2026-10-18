@@ -10,7 +10,7 @@
 | iPhone アプリ | SwiftUI、iOS 17 以降。Phase 4 | セントラル、設定、添削。詳細は [iphone.md](iphone.md) |
 | 添削 | iPhone 上の `AnalysisBackend` | 重い処理はグラスの外。Python（OpenCV + VLM）はその実装の一つで、グラスの通信相手にはしない |
 
-スマホは iPhone です。バックグラウンドの BLE 状態復元と、練習中だけのローカル待受は CoreBluetooth と Network.framework を直接呼びます。
+スマホは iPhone です。バックグラウンドの BLE は CoreBluetooth。練習中だけの JPEG 待受は、実機では Network.framework の `NWListener`、この環境の検証では同じ `WifiBurstLink` の `TcpWifiListener` です。
 
 グラスの minSdk は Android 12（API 31）に合わせる。コンパイルは API 34 を予定する。GMS は使わない。依存禁止は `play-services-*`、`firebase-*`、Maps SDK、Fused Location Provider、広告 SDK。
 
@@ -47,7 +47,7 @@ Python がやること（任意）:
 - 骨格・太さ・起筆 / トメ / ハネの幾何差分
 - VLM による2行の助言
 
-Python が止まっていても、スマホ内のモック実装で線と定型文を返せばセッションは成立する。これは Phase 4 で置く。
+Python が止まっていても、`ManualCritique` が赤の一画と定型の2行を返す。四隅の検出はしない。詳細は [phase-4.md](phase-4.md)。
 
 ## 既定は 0DoF
 

@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 3 まででリポジトリにあるもの:
+Phase 4 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -19,6 +19,7 @@ shodo-ghost/
     directory-layout.md
     phase-2.md
     phase-3.md
+    phase-4.md
     reference-projects.md
   scripts/
     loopback-check.sh      TCP のグラス役と Swift の往復試験
@@ -54,19 +55,22 @@ shodo-ghost/
 iPhone 側:
 
 ```text
-ios/Protocol/          Swift Package。符号器と PhoneSession
+ios/Protocol/          Swift Package。符号器、PhoneSession、練習のバースト
   Sources/.../PhoneSession.swift
   Sources/.../CoreBluetoothPhoneRadio.swift   iOS だけでコンパイル
-  Sources/.../TcpPhoneRadio.swift             ループバック用
+  Sources/.../TcpPhoneRadio.swift             BLE ループバック用
+  Sources/.../WifiBurst.swift                 JPEG の WebSocket。Linux では TCP
+  Sources/.../PracticeCoordinator.swift       前面ゲートと添削の順
+  Sources/.../PracticeScreen.swift            SwiftUI。Linux では空
 fixtures/canonical.txt Kotlin が書いたバイト列。Swift が再符号化して一致を確認する
 ```
 
-後続フェーズで足す予定。今は作らない。
+後続で足す予定。今は作らない。
 
 ```text
 glass/          実機の Activity。SDK が届いてから。View と Canvas。MercurySDK は adapter 実装だけが参照
-ios/App/        Phase 4  SwiftUI
-server/         Phase 4 の任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
+ios/App/        Xcode のアプリターゲット。画面本体は ios/Protocol の PracticeScreen
+server/         任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
 ```
 
 `:protocol` は Android プラグインを適用しない。実機のグラスが `api(project(":protocol"))` する。iPhone は `ios/Protocol` を Swift Package としてリンクする。中身を Kotlin Multiplatform にはしない。iOS 向けの Kotlin/Native はこの Linux 環境で検証できないため、Swift で書いてバイト列を固定する。
@@ -77,8 +81,8 @@ server/         Phase 4 の任意。Python、OpenCV、VLM。iPhone からのみ�
 | --- | --- | --- |
 | 1 | 済み | 契約、シーケンス、見直し、Kotlin と Swift の符号器 |
 | 2 | 済み | `GlassSession` と `PhoneSession`。TCP ループバックで往復。Android GATT モジュールは未作成 |
-| 3 | ここ | 640×480 の HUD と `PracticeHud`。Android の Activity は未作成 |
-| 4 | 未着手 | SwiftUI、前面の練習画面での待受、`AnalysisBackend` |
+| 3 | 済み | 640×480 の HUD と `PracticeHud`。Android の Activity は未作成 |
+| 4 | ここ | 前面の練習画面、JPEG バースト、`ManualCritique`。Xcode アプリと `NWListener` は未作成 |
 | 5 | 未着手 | スリープ復帰の実機調整、再接続、計測に基づく省電力 |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。

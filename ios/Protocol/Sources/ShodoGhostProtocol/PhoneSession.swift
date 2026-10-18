@@ -109,6 +109,24 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
         }
     }
 
+    public func sendCorrections(critiqueId: UInt64, strokes: [Stroke]) throws {
+        guard !strokes.isEmpty else { return }
+        let size = Limits.maxStrokesPerPack
+        let packCount = (strokes.count + size - 1) / size
+        for index in 0..<packCount {
+            let start = index * size
+            let end = min(start + size, strokes.count)
+            let pack = try StrokePack(
+                exemplarOrCritiqueId: critiqueId,
+                packIndex: index,
+                packCount: packCount,
+                strokes: Array(strokes[start..<end]),
+                correction: true
+            )
+            try send(.correctionPack(pack), channel: .payload)
+        }
+    }
+
     public func calibrateStart(_ method: CalibMethod, timeoutSec: Int) throws {
         try send(.calibrateStart(CalibrateStart(method: method, timeoutSec: timeoutSec)), channel: .command)
     }

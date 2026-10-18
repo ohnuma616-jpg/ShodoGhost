@@ -27,7 +27,7 @@ iPhone はセントラルです。API は CoreBluetooth。
 
 ## Wi-Fi バースト
 
-Android の Foreground Service に相当する常駐は iOS に無い。JPEG の待受は、練習画面が前面にあるあいだだけ `NWListener` で開く。
+Android の Foreground Service に相当する常駐は iOS に無い。JPEG の待受は、練習画面が前面にあるあいだだけ開く。実機の API は `NWListener`。Linux で同じ契約を検証する実装は `TcpWifiListener` で、`PracticeCoordinator` が前面ゲートと、Wi-Fi を閉じてからの添削を持つ。手順は [phase-4.md](phase-4.md)。
 
 - 権限文は `NSLocalNetworkUsageDescription`
 - アドレスは BLE の `BEGIN_WIFI_SESSION` でグラスへ渡す。Bonjour には依存しない

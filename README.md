@@ -2,7 +2,7 @@
 
 RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙の上に手本の線を重ね、書き終えた静止画をスマートフォン側で添削する。
 
-今あるのは **Phase 3（HUD）** までです。640×480 の透過 HUD と、テンプル操作の意味づけが JVM で動く。SwiftUI と Android のグラスアプリはまだ無い。SDK がこの環境に無いため。
+今あるのは **Phase 4（練習画面と JPEG バースト）** までです。640×480 の透過 HUD に加え、iPhone 側は前面のときだけ JPEG を受け、Wi-Fi を閉じてから添削を BLE で返す。SwiftUI の画面はパッケージ内にあり、この Linux ではコンパイルしない。Xcode アプリと Android のグラスアプリはまだ無い。
 
 ## このフェーズで固定したこと
 
@@ -23,6 +23,7 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 | [docs/architecture.md](docs/architecture.md) | スタック、役割、アダプタ、電力 |
 | [docs/phase-2.md](docs/phase-2.md) | セッション、モック GATT、ループバック |
 | [docs/phase-3.md](docs/phase-3.md) | 透過 HUD、セーフエリア、テンプル操作 |
+| [docs/phase-4.md](docs/phase-4.md) | 前面の練習画面、JPEG バースト、添削 |
 | [docs/iphone.md](docs/iphone.md) | iPhone の BLE バックグラウンド、Wi-Fi、権限 |
 | [docs/spec-review.md](docs/spec-review.md) | 仕様書の見直し |
 | [docs/ble-gatt.md](docs/ble-gatt.md) | Custom Service と Characteristic |
@@ -48,7 +49,7 @@ iPhone 側の同じ契約は Swift パッケージです。Swift 6 のツール�
 swift test --package-path ios/Protocol
 ```
 
-このテストは `fixtures/canonical.txt` を復号し、再符号化して Kotlin のバイト列と一致することを確認します。セッションの単体試験も同じコマンドに入っています。
+このテストは `fixtures/canonical.txt` を復号し、再符号化して Kotlin のバイト列と一致することを確認します。セッション、HUD の入力、前面ゲート、TCP の JPEG バーストも同じコマンドに入っています。詳細は [docs/phase-4.md](docs/phase-4.md)。
 
 グラス役の TCP と iPhone セッションを 1 本で往復させるときは:
 
