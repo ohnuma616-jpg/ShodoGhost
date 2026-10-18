@@ -30,7 +30,7 @@
 
 - 640×480 の HUD を両眼へ同じ絵として出す
 - テンプル操作を `TouchAction` にする
-- 指示があったときだけカメラ ID `0`（`device@3.7/legacy/0`、4032×3024）を開き、JPEG を1枚取って閉じる。ID `1`（640×480 の広角）は開かない。実機ではレガシー `Camera.open(0)` から 4032×3024、2,358,138 バイト、焦点距離 1.90mm の JPEG が返り、そのコールバックでプレビュー停止と `release` まで進んだ
+- 指示があったときだけカメラ ID `0`（`device@3.7/legacy/0`、4032×3024）を開き、JPEG を1枚取って閉じる。ID `1`（640×480 の広角）は開かない。実機ではレガシー `Camera.open(0)` から 4032×3024、2,358,138 バイト、焦点距離 1.90mm の JPEG が返った。`dumpsys media.camera` では API1 から見えるカメラは 2 台。device 0 は 02:02:47 に接続し、02:02:49 に同じ PID で切断され、その後の接続は無い
 - BLE で状態を通知し、Wi-Fi バーストの間だけ WakeLock を持つ
 
 iPhone がやること:
@@ -91,7 +91,7 @@ Python が止まっていても、`ManualCritique` が赤の一画と定型の2�
 | --- | --- | --- |
 | `BinocularPresenter` | グラス | `BaseMirrorActivity` / `BindingPair`。SDK が無い実行環境では左右半分へ同じ Bitmap を描く |
 | `TempleInputSink` | グラス | `TempleAction`。デスク検証ではキー入力 |
-| `CameraCaptureAdapter` | グラス | Camera2。ワンショット |
+| `CameraCaptureAdapter` | グラス | API1 の `Camera.open(0)`。device 0 だけを開き、1枚で閉じる |
 | `PlaneAnchorAdapter` | グラス | Unity または Mercury の SLAM。既定は未実装で `available = false` |
 | `AnalysisBackend` | iPhone | モック、または LAN の Python |
 
