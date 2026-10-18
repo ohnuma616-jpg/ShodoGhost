@@ -17,3 +17,5 @@ Android SDK が `ANDROID_HOME` か `local.properties` の `sdk.dir` にあると
 ```
 
 APK は `glass/build/outputs/apk/debug/glass-debug.apk`。パッケージは `dev.shodoghost.glass`。カメラ許可を渡してから起動し、15 秒待って `ShodoGlass` のログと `files/still.jpg` を見る。両眼に同じ 3 本が出て、`bytes` のあと `dumpsys media.camera` に device 0 の切断が残っていれば、この画面は足りている。
+
+ARGF20 では 3 本が見えた。`files/still.jpg` は 2,551,170 バイト、4032×3024。EXIF は 2026-10-19 03:19:50 +09:00、焦点距離 1.90mm、35mm 換算 11mm、F2.25、ISO 728、露光 1/100 秒。メーカー RayNeo、モデル ARGF20。`dumpsys media.camera` では PID 8116 が 03:19:49 に device 0 へ接続し、03:19:51 に切断した。

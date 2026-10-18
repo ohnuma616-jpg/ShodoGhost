@@ -24,6 +24,7 @@ FixLensAR の仕様（`docs/spec.md`、2026-10-13）で実機に寄せて書い�
 - Unity の `AndroidJavaProxy` では Camera2 の `CameraDevice.StateCallback` を実装できない。抽象クラスであり、`IllegalArgumentException` になった。C# 側の `Camera.PictureCallback` も `onPictureTaken` が届かず、Java 側のコールバックで書けた。
 - その JPEG の保存先は Unity の `persistentDataPath`（`/storage/emulated/0/Android/data/dev.shodoghost.probe/files/still.jpg`）。`run-as` からは `Permission denied`。`adb pull` では同じパスを取れた。
 - `dumpsys media.camera` では API1 から見えるカメラは 2 台。`dev.shodoghost.probe` の PID 7377 は 02:02:47 に device 0 へ接続し、02:02:49 に切断した。それ以降の接続は無く、HAL の `device@3.7/legacy/0` に掴んでいるクライアントは残っていない。device 1 は開いていない。
+- `dev.shodoghost.glass` は 640×480 を左右へ出した画面で、3 本が見えた。PID 8116 は 03:19:49 に device 0 へ接続し、03:19:51 に切断した。JPEG は 2,551,170 バイト、4032×3024、2026-10-19 03:19:50 +09:00、焦点距離 1.90mm、35mm 換算 11mm、F2.25、ISO 728。`files/still.jpg` は引き出すための写しで、`run-as` から読めた。
 - `SpeechRecognizer` はウェイクワード専用で、手順の音声コマンドには使えなかった。オンデバイスの Vosk を使っている。
 - ジャイロ積分の枠はドリフトし、平行移動には追従しない。空間固定は別 APK で、現行ビルドには OpenXR を入れない。
 
