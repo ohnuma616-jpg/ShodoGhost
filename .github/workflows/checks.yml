@@ -1,0 +1,17 @@
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  protocol:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: JDK 21 と Swift 6.2
+        run: bash scripts/ci-setup-linux.sh
+      - name: 契約テスト
+        run: bash scripts/ci-linux.sh

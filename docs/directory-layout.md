@@ -24,6 +24,13 @@ shodo-ghost/
     reference-projects.md
   scripts/
     loopback-check.sh      TCP のグラス役と Swift の往復試験
+    ci-linux.sh            Ubuntu の契約テスト
+    ci-setup-linux.sh      JDK 21 と Swift 6.2
+  .buildkite/
+    pipeline.yml           Buildkite の Mac で iPhone をコンパイル
+  .depot/workflows/
+    checks.yml             Depot の Ubuntu で契約テスト
+  docs/cloud-ci.md         接続手順
   protocol/
     build.gradle.kts
     src/main/kotlin/dev/shodoghost/protocol/
@@ -108,6 +115,6 @@ server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ば�
 | 6 | 済み | カメラ 0 を1枚だけ開き、閉じてから `CAPTURE_READY` |
 | 7 | 済み | 1280×480 の Activity。起動 4 秒後に 1 枚撮って閉じる |
 | 8 | 済み | `ShodoGhost` を広告し、`CAPTURE_NOW` で 1 枚撮る |
-| 9 | ここ | `ios/App`。接続して撮影ボタンが `CAPTURE_NOW` を送る |
+| 9 | ここ | `ios/App`。接続して撮影ボタンが `CAPTURE_NOW` を送る。コンパイルは Buildkite の Mac |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。

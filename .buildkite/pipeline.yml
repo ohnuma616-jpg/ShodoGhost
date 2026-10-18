@@ -1,0 +1,12 @@
+# Origin の Apps から Buildkite を入れ、このファイルを Pipeline upload する。
+# キューのキーが違うときは queue を Clusters に出ている macOS のキーへ変える。
+
+agents:
+  queue: macos-15-medium
+
+steps:
+  - label: ":xcode: iPhone をコンパイル"
+    command: .buildkite/scripts/ios-remote.sh
+    timeout_in_minutes: 45
+    artifact_paths:
+      - "build/ShodoGhost-simulator.zip"

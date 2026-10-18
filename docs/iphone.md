@@ -1,6 +1,6 @@
 # iPhone
 
-コンパニオンは iPhone です。最小バージョンは iOS 17。UI は SwiftUI。通信の実装は Swift Package `ios/Protocol`（モジュール名 `ShodoGhostProtocol`）で、Phase 4 のアプリがこれをリンクします。
+コンパニオンは iPhone です。最小バージョンは iOS 17。UI は SwiftUI。通信の実装は Swift Package `ios/Protocol`（モジュール名 `ShodoGhostProtocol`）で、`ios/App` がこれをリンクします。コンパイル手順は [cloud-ci.md](cloud-ci.md)。
 
 符号器はグラス側の Kotlin と別物です。`fixtures/canonical.txt` を Swift が復号して再符号化し、バイト列が一致することを `swift test` が確認します。
 
