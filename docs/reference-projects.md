@@ -32,4 +32,4 @@ FixLensAR の仕様（`docs/spec.md`、2026-10-13）で実機に寄せて書い�
 - 音声。グラスに認識エンジンを常駐させない。Push-to-Talk のまま。
 - コンパニオン。FixLensAR は眼鏡単体、TapInsight はグラス自身が設定ページを配る。Shodo Ghost のコンパニオンは iPhone。
 - 推論。Gemini や手順 JSON の解釈はグラスで回さない。添削は iPhone 側。
-- Android の版表記。TapInsight のガイドは Android 14 と書いている。Shodo Ghost の契約は RayNeo AIOS（Android 12）のまま。実機の `ro.build.version.sdk` が取れるまで数字は動かさない。
+- Android の版表記。TapInsight のガイドは Android 14 と書いている。接続した X3 Pro の `ro.build.version.sdk` は 32（Android 12L）だった。契約は API 32 まで。Android 14 には上げない。

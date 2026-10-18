@@ -12,7 +12,7 @@
 
 スマホは iPhone です。バックグラウンドの BLE は CoreBluetooth。練習中だけの JPEG 待受は、実機では Network.framework の `NWListener`、この環境の検証では同じ `WifiBurstLink` の `TcpWifiListener` です。
 
-グラスの minSdk は Android 12（API 31）に合わせる。コンパイルは API 34 を予定する。GMS は使わない。依存禁止は `play-services-*`、`firebase-*`、Maps SDK、Fused Location Provider、広告 SDK。
+接続した X3 Pro（ARGF20 / MercuryLiteXR）は API 32（Android 12L）だった。minSdk は 31 のまま、ターゲットは 32。API 33 以降は使わない。GMS は使わない。依存禁止は `play-services-*`、`firebase-*`、Maps SDK、Fused Location Provider、広告 SDK。
 
 ## 役割
 

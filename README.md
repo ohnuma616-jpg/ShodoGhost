@@ -64,7 +64,7 @@ swift test --package-path ios/Protocol
 
 RayNeo 公式資料（X3 Pro、2025年の開発者ドキュメント）に合わせています。
 
-- Snapdragon AR1 Gen 1、RayNeo AIOS（Android 12）
+- Snapdragon AR1 Gen 1、RayNeo AIOS。接続した X3 Pro（ARGF20 / MercuryLiteXR）の `ro.build.version.sdk` は 32（Android 12L）
 - 両眼フルカラー MicroLED、回折導波路、640×480、FOV 30°、約 3,500 nit（ピーク 6,000）
 - 論理画面は1枚。素の Android UI は左右に割れるので、640×480 を描いて両眼へ複製する
 - メインカメラ Sony IMX681 12MP。空間位置用に別の VGA カメラがある
