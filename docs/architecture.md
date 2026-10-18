@@ -63,7 +63,8 @@ Python が止まっていても、`ManualCritique` が赤の一画と定型の2�
 
 - 書き終わりは自動検出しない。テンプル長押し、スマホのリモコン、Push-to-Talk のいずれか
 - Wake Word の常駐はしない。マイクを開くのは PTT のあいだだけ
-- プレビュー Surface を出し続けない。`CameraCaptureAdapter.captureStill` は戻る前にカメラを閉じる
+- プレビュー Surface を出し続けない。`LegacyStillCapture.captureStill` は `Camera.open(0)` から `release` までを1回の呼び出しで終える。GATT のロックを持ったスレッドからは呼ばない
+- `GlassStillShot` はその JPEG をメモリに1枚だけ残し、`CAPTURE_READY` を出す。ディスクには書かない。パネル消灯中、`HOT`、`BLE_READY` 以外ではカメラを開かない
 - `CaptureReady.cameraReleased` が false のメッセージは作れない
 
 ## スリープ

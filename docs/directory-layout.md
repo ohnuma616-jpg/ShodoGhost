@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 5 まででリポジトリにあるもの:
+Phase 6 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -39,6 +39,8 @@ shodo-ghost/
       LinkStateMachine.kt  BLE 常時 / Wi-Fi バースト
       PowerPolicy.kt       相ごとに持ってよいラジオ。ディスクへは残さない
       Adapters.kt          SDK 境界と十字リーダー
+      camera/LegacyStillCapture.kt  Camera.open(0)、1枚、release
+      camera/GlassStillShot.kt      メモリ1枚と CAPTURE_READY
       Crc.kt
       ByteIo.kt
       link/GlassSession.kt GATT サーバが委譲するセッション
@@ -52,6 +54,8 @@ shodo-ghost/
       ProtocolTest.kt
       link/GlassSessionTest.kt
       hud/HudRendererTest.kt
+      camera/LegacyStillCaptureTest.kt
+      camera/GlassStillShotTest.kt
 ```
 
 iPhone 側:
@@ -67,10 +71,16 @@ ios/Protocol/          Swift Package。符号器、PhoneSession、練習のバ�
 fixtures/canonical.txt Kotlin が書いたバイト列。Swift が再符号化して一致を確認する
 ```
 
+Android SDK が必要なソース。この環境の Gradle には入れていない。
+
+```text
+glass/src/main/kotlin/dev/shodoghost/glass/AndroidStillCamera.kt
+```
+
 後続で足す予定。今は作らない。
 
 ```text
-glass/          実機の Activity。SDK が届いてから。View と Canvas。MercurySDK は adapter 実装だけが参照
+glass/ の Activity    View と Canvas。MercurySDK は adapter 実装だけが参照
 ios/App/        Xcode のアプリターゲット。画面本体は ios/Protocol の PracticeScreen
 server/         任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
 ```
@@ -85,6 +95,7 @@ server/         任意。Python、OpenCV、VLM。iPhone からのみ呼ばれる
 | 2 | 済み | `GlassSession` と `PhoneSession`。TCP ループバックで往復。Android GATT モジュールは未作成 |
 | 3 | 済み | 640×480 の HUD と `PracticeHud`。Android の Activity は未作成 |
 | 4 | 済み | 前面の練習画面、JPEG バースト、`ManualCritique`。Xcode アプリと `NWListener` は未作成 |
-| 5 | ここ | スリープで Wi-Fi を放す。再接続で JPEG 1 枚と手本を戻す。mAh は未計測 |
+| 5 | 済み | スリープで Wi-Fi を放す。再接続で JPEG 1 枚と手本を戻す。mAh は未計測 |
+| 6 | ここ | カメラ 0 を1枚だけ開き、閉じてから `CAPTURE_READY`。Activity は未作成 |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。
