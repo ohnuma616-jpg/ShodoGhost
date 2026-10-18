@@ -5,6 +5,8 @@ import android.app.Activity
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
 import android.view.View
 import android.view.WindowManager
@@ -16,19 +18,20 @@ import dev.shodoghost.protocol.hud.DeskMirrorPresenter
 import dev.shodoghost.protocol.hud.bringUpFrame
 import dev.shodoghost.protocol.hud.installHudGlyphs
 import java.io.File
-import java.util.concurrent.Executors
 
 /**
  * 640×480 を左右へ出す。撮影は iPhone の CAPTURE_NOW が来てから、ロックの外で 1 枚。
- * 撮影スレッドは Looper を持たない。
+ * 撮影スレッドは Looper を持つ。Camera のコールバックはそこへ届く。
  */
 class GlassActivity : Activity() {
     private val presenter = DeskMirrorPresenter()
     private val view by lazy { HudView(this) }
-    private val worker = Executors.newSingleThreadExecutor()
+    private val cameraThread = HandlerThread("shodo-camera").apply { start() }
+    private val cameraHandler = Handler(cameraThread.looper)
     private lateinit var link: GlassLink
     private lateinit var shot: GlassStillShot
-    private var line: List<String> = emptyList()
+    private var bottom = "起動"
+    private var captureShown = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,11 +42,11 @@ class GlassActivity : Activity() {
         link = GlassLink(
             this,
             onCapture = ::capture,
-            onPhase = { phase -> runOnUiThread { show(phase, advice = listOf(phaseWord(phase))) } },
+            onPhase = { phase -> runOnUiThread { onPhase(phase) } },
             onStatus = ::note,
         )
         shot = GlassStillShot(link.session, LegacyStillCapture(AndroidStillCamera()))
-        show(LinkPhase.IDLE, advice = listOf("起動"))
+        show(LinkPhase.IDLE)
         setContentView(view)
     }
 
@@ -71,7 +74,7 @@ class GlassActivity : Activity() {
 
     override fun onDestroy() {
         link.close()
-        worker.shutdown()
+        cameraThread.quit()
         super.onDestroy()
     }
 
@@ -87,37 +90,77 @@ class GlassActivity : Activity() {
         LinkPhase.BACKOFF -> "再接続"
     }
 
+    private fun onPhase(phase: LinkPhase) {
+        val linked = phase == LinkPhase.BLE_READY ||
+            phase == LinkPhase.WIFI_WAKE ||
+            phase == LinkPhase.TRANSFER ||
+            phase == LinkPhase.WIFI_TEARDOWN
+        if (!linked) captureShown = false
+        if (!captureShown) bottom = phaseWord(phase)
+        show(phase)
+    }
+
     private fun note(text: String) {
         runOnUiThread {
+            captureShown = false
+            bottom = text
             Log.i(TAG, text)
             runCatching { File(filesDir, "link.txt").writeText(text) }
-            show(link.session.phase, advice = listOf(text))
+            show(link.session.phase)
         }
     }
 
     private fun capture(request: CaptureNow) {
-        worker.execute {
+        runOnUiThread {
+            captureShown = true
+            bottom = "撮影"
+            show(link.session.phase)
+        }
+        cameraHandler.post {
             try {
                 val still = shot.take(request.jpegQuality)
                 File(filesDir, STILL_NAME).writeBytes(still.jpeg)
-                Log.i(TAG, "bytes ${still.jpeg.size} ${still.width}x${still.height} released ${still.cameraReleased}")
-                runOnUiThread { show(link.session.phase, advice = listOf(still.jpeg.size.toString())) }
+                val text = still.jpeg.size.toString()
+                Log.i(TAG, "bytes $text ${still.width}x${still.height} released ${still.cameraReleased}")
+                runCatching { File(filesDir, "link.txt").writeText(text) }
+                runOnUiThread {
+                    captureShown = true
+                    bottom = text
+                    show(link.session.phase)
+                }
             } catch (error: Exception) {
+                val text = clip("失敗 ${error.message}")
                 Log.i(TAG, "capture failed ${error.message}")
-                runOnUiThread { show(link.session.phase, warning = "撮影失敗") }
+                runCatching { File(filesDir, "link.txt").writeText(text) }
+                runOnUiThread {
+                    captureShown = true
+                    bottom = text
+                    show(link.session.phase)
+                }
             }
         }
     }
 
-    private fun show(phase: LinkPhase, advice: List<String> = line, warning: String? = null) {
-        line = advice
+    private fun clip(text: String): String {
+        val out = StringBuilder()
+        var bytes = 0
+        for (ch in text) {
+            val size = ch.toString().encodeToByteArray().size
+            if (bytes + size > 42) break
+            out.append(ch)
+            bytes += size
+        }
+        return out.toString().ifEmpty { "失敗" }
+    }
+
+    private fun show(phase: LinkPhase, warning: String? = null) {
         val disconnected = phase != LinkPhase.BLE_READY &&
             phase != LinkPhase.WIFI_WAKE &&
             phase != LinkPhase.TRANSFER &&
             phase != LinkPhase.WIFI_TEARDOWN
         presenter.present(
             bringUpFrame(
-                advice = advice,
+                advice = listOf(bottom),
                 warning = warning ?: if (disconnected) "未接続" else null,
             ),
         )

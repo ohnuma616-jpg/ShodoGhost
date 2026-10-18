@@ -1,6 +1,6 @@
 # Phase 8 — BLE で撮影
 
-グラスは Activity が生きているあいだ `ShodoGhost` を広告する。下の行は段階を示す。接続の合図を受けると「準備完了」になる。再接続で MTU 通知が来なくても、Command の書き込みが届いた時点でリンクを起こす。パケットは Service UUID だけ、名前はスキャンレスポンス。Command、Touch、Payload、SessionInfo は暗号化が必要で、ボンドが済むまで `GlassSession` は書き込みを捨てる。MTU が 185 未満の通知は無視する。iPhone は接続時にその交換を行う。
+グラスは Activity が生きているあいだ `ShodoGhost` を広告する。下の行は段階を示す。接続の合図を受けると「準備完了」になる。撮影を始めると「撮影」になり、失敗した理由もその行に残す。再接続で MTU 通知が来なくても、Command の書き込みが届いた時点でリンクを起こす。パケットは Service UUID だけ、名前はスキャンレスポンス。Command、Touch、Payload、SessionInfo は暗号化が必要で、ボンドが済むまで `GlassSession` は書き込みを捨てる。MTU が 185 未満の通知は無視する。iPhone は接続時にその交換を行う。
 
 `CAPTURE_NOW` のリスナは GATT のロックを持ったままカメラを開かない。別スレッドの `GlassStillShot` がカメラ 0 を 1 枚開いて閉じ、`CAPTURE_READY` を Status へ載せる。引き出すための写しは `files/still.jpg`。起動しただけでは撮らない。
 
