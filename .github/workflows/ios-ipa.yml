@@ -1,0 +1,28 @@
+# GitHub に push したときだけ Mac で走る。
+# Origin の Depot は Ubuntu なので、このファイルは .depot/workflows に置かない。
+
+name: ios-ipa
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ios-ipa.yml"
+      - "scripts/github-ipa.sh"
+      - "ios/**"
+      - "fixtures/**"
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: 実機用 IPA
+        run: bash scripts/github-ipa.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ShodoGhost-ipa
+          path: build/ShodoGhost.ipa
+          if-no-files-found: error

@@ -2,7 +2,7 @@
 
 RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙の上に手本の線を重ね、書き終えた静止画をスマートフォン側で添削する。
 
-今あるのは **Phase 9（iPhone の撮影ボタン）** までです。640×480 の透過 HUD を 1280×480 の左右へ出し、グラスは `ShodoGhost` として広告します。iPhone アプリが接続し、撮影ボタンが `CAPTURE_NOW` を送ると、カメラ 0 を 1 枚開いて閉じます。未送信の JPEG はメモリ 1 枚を再接続後に送り直します。確認用 Activity だけ、引き出すために `files/still.jpg` へ 1 枚書きます。iPhone へは [docs/cloud-ci.md](docs/cloud-ci.md) の手順で、WSL の xtool が IPA を作り、Sideloadly が署名して入れる。
+今あるのは **Phase 9（iPhone の撮影ボタン）** までです。640×480 の透過 HUD を 1280×480 の左右へ出し、グラスは `ShodoGhost` として広告します。iPhone アプリが接続し、撮影ボタンが `CAPTURE_NOW` を送ると、カメラ 0 を 1 枚開いて閉じます。未送信の JPEG はメモリ 1 枚を再接続後に送り直します。確認用 Activity だけ、引き出すために `files/still.jpg` へ 1 枚書きます。iPhone 用の IPA は、GitHub の macOS で `xcodebuild` し、Windows の Sideloadly が署名して入れる。手順は [docs/cloud-ci.md](docs/cloud-ci.md)。
 
 ## このフェーズで固定したこと
 
@@ -29,7 +29,7 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 | [docs/phase-7.md](docs/phase-7.md) | 1280×480 の画面と、起動後 1 枚の撮影 |
 | [docs/phase-8.md](docs/phase-8.md) | BLE 広告と、電話からの CAPTURE_NOW |
 | [docs/phase-9.md](docs/phase-9.md) | iPhone の撮影ボタン |
-| [docs/cloud-ci.md](docs/cloud-ci.md) | Sideloadly で iPhone に入れる。IPA は WSL の xtool |
+| [docs/cloud-ci.md](docs/cloud-ci.md) | GitHub Actions の Mac で IPA を作り、Sideloadly で入れる |
 | [docs/iphone.md](docs/iphone.md) | iPhone の BLE バックグラウンド、Wi-Fi、権限 |
 | [docs/spec-review.md](docs/spec-review.md) | 仕様書の見直し |
 | [docs/ble-gatt.md](docs/ble-gatt.md) | Custom Service と Characteristic |
@@ -65,7 +65,7 @@ swift test --package-path ios/Protocol
 
 詳細は [docs/phase-2.md](docs/phase-2.md)。
 
-iPhone に入れる IPA は、WSL で `bash scripts/sideload-ipa.sh` が作る。Windows の Sideloadly にその IPA を落とす。手順は [docs/cloud-ci.md](docs/cloud-ci.md)。
+iPhone に入れる IPA は、GitHub の公開リポジトリで `macos-latest` が作る。Windows の Sideloadly にその IPA を落とす。手順は [docs/cloud-ci.md](docs/cloud-ci.md)。
 
 ## ハードウェア前提
 

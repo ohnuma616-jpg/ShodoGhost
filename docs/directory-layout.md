@@ -27,11 +27,15 @@ shodo-ghost/
     ci-linux.sh            Ubuntu の契約テスト
     ci-setup-linux.sh      JDK 21 と Swift 6.2
     sideload-ipa.sh        xtool で Sideloadly 用の IPA
+    github-ipa.sh          GitHub の Mac で Sideloadly 用の IPA
+  .github/workflows/
+    ios-ipa.yml            macos-latest。GitHub に push したときだけ
+    checks.yml             Ubuntu の契約テスト
   .buildkite/
     pipeline.yml           Buildkite の Mac。Hosted agents は今の組織では制限中
   .depot/workflows/
     checks.yml             Depot の Ubuntu で契約テスト
-  docs/cloud-ci.md         Sideloadly と xtool の手順
+  docs/cloud-ci.md         GitHub Actions と Sideloadly
   protocol/
     build.gradle.kts
     src/main/kotlin/dev/shodoghost/protocol/
