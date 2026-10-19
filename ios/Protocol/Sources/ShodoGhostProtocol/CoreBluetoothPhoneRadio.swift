@@ -16,6 +16,7 @@ public final class CoreBluetoothPhoneRadio: NSObject, PhoneRadio, CBCentralManag
     private var sessionInfo: CBCharacteristic?
     private var prepareCallback: ((Int) -> Void)?
     private var readCallback: (([UInt8]) -> Void)?
+    private var connectTimer: DispatchSourceTimer?
     private let queue = DispatchQueue(label: "dev.shodoghost.bluetooth")
 
     public override init() {
@@ -77,6 +78,7 @@ public final class CoreBluetoothPhoneRadio: NSObject, PhoneRadio, CBCentralManag
             self.peripheral = peripheral
             peripheral.delegate = self
         }
+        followGate()
     }
 
     public func centralManager(
@@ -86,27 +88,31 @@ public final class CoreBluetoothPhoneRadio: NSObject, PhoneRadio, CBCentralManag
         rssi RSSI: NSNumber
     ) {
         central.stopScan()
+        cancelConnectTimeout()
         self.peripheral = peripheral
         peripheral.delegate = self
         central.connect(peripheral, options: nil)
+        armConnectTimeout()
     }
 
     public func centralManager(_ central: CBCentralManager, didConnect peripheral: CBPeripheral) {
+        cancelConnectTimeout()
         peripheral.discoverServices([CBUUID(string: GattProfile.service)])
     }
 
+    public func centralManager(_ central: CBCentralManager, didFailToConnect peripheral: CBPeripheral, error: Error?) {
+        release(peripheral, dropSession: false)
+    }
+
     public func centralManager(_ central: CBCentralManager, didDisconnectPeripheral peripheral: CBPeripheral, error: Error?) {
-        self.peripheral = nil
-        command = nil
-        status = nil
-        touch = nil
-        payload = nil
-        sessionInfo = nil
-        sink?.radioDidDrop()
+        release(peripheral, dropSession: true)
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
-        guard let service = peripheral.services?.first(where: { $0.uuid == CBUUID(string: GattProfile.service) }) else {
+        guard error == nil,
+            let service = peripheral.services?.first(where: { $0.uuid == CBUUID(string: GattProfile.service) })
+        else {
+            manager?.cancelPeripheralConnection(peripheral)
             return
         }
         peripheral.discoverCharacteristics(
@@ -178,11 +184,97 @@ public final class CoreBluetoothPhoneRadio: NSObject, PhoneRadio, CBCentralManag
     }
 
     private func scanIfPoweredOn() {
-        guard manager?.state == .poweredOn, prepareCallback != nil, peripheral == nil else { return }
-        manager?.scanForPeripherals(
-            withServices: [CBUUID(string: GattProfile.service)],
-            options: nil
-        )
+        followGate()
+    }
+
+    private func followGate() {
+        guard let manager else { return }
+        let known: KnownPeripheral
+        if let peripheral {
+            switch peripheral.state {
+            case .connected:
+                known = .connected
+            case .connecting:
+                known = .connecting
+            default:
+                known = .disconnected
+            }
+        } else {
+            known = .absent
+        }
+        switch RadioGate.step(
+            poweredOn: manager.state == .poweredOn,
+            awaitingPrepare: prepareCallback != nil,
+            known: known
+        ) {
+        case .hold:
+            return
+        case .scan:
+            cancelConnectTimeout()
+            manager.scanForPeripherals(
+                withServices: [CBUUID(string: GattProfile.service)],
+                options: nil
+            )
+        case .connect:
+            if let peripheral, peripheral.state != .connecting {
+                manager.connect(peripheral, options: nil)
+            }
+            armConnectTimeout()
+        case .discoverServices:
+            cancelConnectTimeout()
+            manager.stopScan()
+            peripheral?.discoverServices([CBUUID(string: GattProfile.service)])
+        }
+    }
+
+    private func armConnectTimeout() {
+        connectTimer?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now() + 4)
+        timer.setEventHandler { [weak self] in
+            self?.giveUpConnect()
+        }
+        connectTimer = timer
+        timer.resume()
+    }
+
+    private func cancelConnectTimeout() {
+        connectTimer?.cancel()
+        connectTimer = nil
+    }
+
+    /// 覚えていた端末へ届かないときは、その接続を捨てて広告を探し直す。
+    private func giveUpConnect() {
+        cancelConnectTimeout()
+        guard let peripheral, peripheral.state != .connected else { return }
+        manager?.cancelPeripheralConnection(peripheral)
+        if self.peripheral?.identifier == peripheral.identifier {
+            self.peripheral = nil
+        }
+        clearCharacteristics()
+        followGate()
+    }
+
+    private func release(_ peripheral: CBPeripheral, dropSession: Bool) {
+        if self.peripheral?.identifier == peripheral.identifier {
+            self.peripheral = nil
+        }
+        clearCharacteristics()
+        if prepareCallback != nil {
+            followGate()
+            return
+        }
+        if dropSession {
+            sink?.radioDidDrop()
+        }
+    }
+
+    private func clearCharacteristics() {
+        command = nil
+        status = nil
+        touch = nil
+        payload = nil
+        sessionInfo = nil
     }
 
     private func write(_ value: [UInt8], _ characteristic: CBCharacteristic?, type: CBCharacteristicWriteType) {
