@@ -22,9 +22,9 @@ import Testing
     let practice = PracticeCoordinator(session: session, backend: ManualCritique(), link: ScriptedWifi())
     try practice.sendLesson()
     #expect(practice.exemplarId == EiExemplar.id)
-    #expect(practice.exemplarStrokes.count == 3)
+    #expect(practice.exemplarStrokes.count == 2)
     #expect(practice.exemplarStrokes.allSatisfy { $0.layer == .contour && $0.widthPx == Limits.minLinePx })
-    #expect(practice.exemplarStrokes[0].points[0] == (try PaperPoint(x: 3536, y: 955)))
+    #expect(practice.exemplarStrokes[0].points[0] == (try PaperPoint(x: 5219, y: 2062)))
     var sent: [String] = []
     for message in radio.commands {
         switch message {
@@ -34,12 +34,12 @@ import Testing
             sent.append("mode")
         case .exemplarMeta(let meta):
             #expect(meta.exemplarId == EiExemplar.id)
-            #expect(meta.strokeCount == 3)
-            #expect(meta.pointCount == 62)
+            #expect(meta.strokeCount == 2)
+            #expect(meta.pointCount == 69)
             sent.append("meta")
         case .strokePack(let pack):
             #expect(pack.correction == false)
-            #expect(pack.strokes.count == 3)
+            #expect(pack.strokes.count == 2)
             sent.append("stroke")
         default:
             break
