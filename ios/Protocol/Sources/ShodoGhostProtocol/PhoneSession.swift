@@ -67,6 +67,7 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
     private var storedLesson: StoredLesson?
     private var replayLesson = false
     private var pendingReplay: StoredLesson?
+    private var helloAttempts = 0
 
     public init(radio: PhoneRadio) {
         self.radio = radio
@@ -250,28 +251,51 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
             return
         }
         nonce = fresh
+        helloAttempts = 1
+        let frames = framesForHelloLocked(fresh)
+        lock.unlock()
+        guard let frames else { return }
+        for frame in frames {
+            radio.writeCommand(frame)
+        }
+        armHelloRetry()
+    }
+
+    /// 最初の HELLO_ACK が Notify の前に落ちても、同じノンスでもう一度書く。
+    private func repeatHello() {
+        lock.lock()
+        guard storedPhase == .negotiating, !stopped, helloAttempts < 4, nonce.count == Limits.nonceBytes else {
+            lock.unlock()
+            return
+        }
+        helloAttempts += 1
+        let frames = framesForHelloLocked(nonce)
+        lock.unlock()
+        guard let frames else { return }
+        for frame in frames {
+            radio.writeCommand(frame)
+        }
+        armHelloRetry()
+    }
+
+    private func framesForHelloLocked(_ nonce: [UInt8]) -> [[UInt8]]? {
         let hello: LinkMessage
         do {
             hello = .hello(try Hello(
                 version: Limits.protocolVersion,
                 requestedMtu: attMtu,
                 role: .phoneCentral,
-                nonce: fresh
+                nonce: nonce
             ))
+            return try takeFramesLocked(hello)
         } catch {
-            lock.unlock()
-            return
+            return nil
         }
-        let frames: [[UInt8]]
-        do {
-            frames = try takeFramesLocked(hello)
-        } catch {
-            lock.unlock()
-            return
-        }
-        lock.unlock()
-        for frame in frames {
-            radio.writeCommand(frame)
+    }
+
+    private func armHelloRetry() {
+        scheduleRetry(1_000) { [weak self] in
+            self?.repeatHello()
         }
     }
 

@@ -136,10 +136,30 @@ public final class CoreBluetoothPhoneRadio: NSObject, PhoneRadio, CBCentralManag
             default: break
             }
         }
-        let attMtu = peripheral.maximumWriteValueLength(for: .withResponse) + 3
+        if status == nil {
+            finishPrepare(peripheral)
+        }
+    }
+
+    public func peripheral(
+        _ peripheral: CBPeripheral,
+        didUpdateNotificationStateFor characteristic: CBCharacteristic,
+        error: Error?
+    ) {
+        guard characteristic.uuid == status?.uuid else { return }
+        if error != nil || !characteristic.isNotifying {
+            sink?.radioDidDrop()
+            return
+        }
+        finishPrepare(peripheral)
+    }
+
+    private func finishPrepare(_ peripheral: CBPeripheral) {
         let callback = prepareCallback
         prepareCallback = nil
-        callback?(attMtu)
+        guard let callback else { return }
+        let attMtu = peripheral.maximumWriteValueLength(for: .withResponse) + 3
+        callback(attMtu)
     }
 
     public func peripheral(_ peripheral: CBPeripheral, didUpdateValueFor characteristic: CBCharacteristic, error: Error?) {

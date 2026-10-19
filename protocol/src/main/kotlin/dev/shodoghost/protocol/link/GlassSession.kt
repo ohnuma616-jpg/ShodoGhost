@@ -229,10 +229,12 @@ class GlassSession(
     }
 
     private fun handleCommand(message: LinkMessage, sequence: Int, ackRequested: Boolean) {
-        if (phase == LinkPhase.NEGOTIATING && message !is Hello) return
-        if (message is Hello && phase != LinkPhase.NEGOTIATING) return
+        if (message is Hello) {
+            onHello(message)
+            return
+        }
+        if (phase == LinkPhase.NEGOTIATING) return
         when (message) {
-            is Hello -> onHello(message)
             is SetMode -> {
                 mode = message.mode
                 paper = message.paper
@@ -298,12 +300,13 @@ class GlassSession(
     }
 
     private fun onHello(hello: Hello) {
-        if (hello.version != Limits.PROTOCOL_VERSION || attMtu < Limits.MIN_ATT_MTU) {
+        val accept = hello.version == Limits.PROTOCOL_VERSION && attMtu >= Limits.MIN_ATT_MTU
+        if (canNotify()) {
             notifyStatus(
                 encode(
                     HelloAck(
                         version = Limits.PROTOCOL_VERSION,
-                        accept = false,
+                        accept = accept,
                         batteryPercent = batteryPercent,
                         thermal = thermal,
                         batteryMillivolts = batteryMillivolts,
@@ -312,22 +315,12 @@ class GlassSession(
                     ),
                 ),
             )
+        }
+        if (phase != LinkPhase.NEGOTIATING) return
+        if (!accept) {
             advance(LinkSignal.HELLO_REJECTED)
             return
         }
-        notifyStatus(
-            encode(
-                HelloAck(
-                    version = Limits.PROTOCOL_VERSION,
-                    accept = true,
-                    batteryPercent = batteryPercent,
-                    thermal = thermal,
-                    batteryMillivolts = batteryMillivolts,
-                    hwFlags = hwFlags,
-                    nonce = hello.nonce,
-                ),
-            ),
-        )
         advance(LinkSignal.HELLO_OK)
         publishState()
         pendingCapture?.let { notifyStatus(encode(it)) }
