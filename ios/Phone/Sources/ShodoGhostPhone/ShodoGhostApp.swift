@@ -168,9 +168,21 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
                 link.stop()
                 try session.endWifi(reason: 0)
                 let data = Data(jpeg)
+                let foundQuad = JpegGray.quad(in: data)
+                if let foundQuad {
+                    try session.calibrateCommit(
+                        CalibrateCommit(
+                            method: .oneShot,
+                            quad: foundQuad,
+                            widthMm: PaperProfile.hanshi.widthMm,
+                            heightMm: PaperProfile.hanshi.heightMm
+                        )
+                    )
+                }
+                let found = foundQuad != nil
                 DispatchQueue.main.async {
                     self.jpeg = data
-                    self.detail = "\(jpeg.count) バイト"
+                    self.detail = found ? "四隅を合わせました" : "四隅が見つかりません"
                 }
                 try session.showAdvice(["添削中"])
                 let result = try ManualCritique().critique(
@@ -186,7 +198,7 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
                 try session.showAdvice(result.advice)
                 try session.sendCorrections(critiqueId: result.critiqueId, strokes: result.strokes)
                 DispatchQueue.main.async {
-                    self.detail = "添削を送りました"
+                    self.detail = found ? "四隅を合わせ、添削を送りました" : "四隅は見つからず、添削を送りました"
                     self.receiving = false
                 }
             } catch {
@@ -219,6 +231,33 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
         case .wifiWake, .transfer, .wifiTeardown:
             return "写真を送っています"
         }
+    }
+}
+
+enum JpegGray {
+    static func quad(in data: Data) -> PaperQuad? {
+        guard let image = UIImage(data: data)?.cgImage else { return nil }
+        let width = image.width
+        let height = image.height
+        guard width >= 8, height >= 8 else { return nil }
+        let targetW = min(160, width)
+        let targetH = max(1, height * targetW / width)
+        let count = targetW * targetH
+        let buffer = UnsafeMutablePointer<UInt8>.allocate(capacity: count)
+        defer { buffer.deallocate() }
+        guard let context = CGContext(
+            data: buffer,
+            width: targetW,
+            height: targetH,
+            bitsPerComponent: 8,
+            bytesPerRow: targetW,
+            space: CGColorSpaceCreateDeviceGray(),
+            bitmapInfo: CGImageAlphaInfo.none.rawValue
+        ) else { return nil }
+        context.interpolationQuality = .none
+        context.draw(image, in: CGRect(x: 0, y: 0, width: targetW, height: targetH))
+        let gray = Array(UnsafeBufferPointer(start: buffer, count: count))
+        return PaperFinder.quad(width: targetW, height: targetH, gray: gray)
     }
 }
 

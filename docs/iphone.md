@@ -43,7 +43,7 @@ Android の Foreground Service に相当する常駐は iOS に無い。撮影�
 
 ## 添削と入力
 
-四隅検出と筆画の幾何は、LAN 上の Python を本線にする。OpenCV を iOS アプリへ同梱しない。Python が無いときは、iPhone の画面で四隅を手で合わせて `CALIBRATE_COMMIT` を送る。
+撮影 JPEG の四隅は、iPhone 上の輝度で出す。OpenCV は同梱しない。明るい塊が半紙らしいときだけ `CALIBRATE_COMMIT`（ワンショット、半紙 242×333mm）を送る。机と紙の境が無いときは四隅を動かさない。「四隅を送る」は内側 10% から 90% の手送りとして残る。筆画の幾何は、LAN 上の Python を本線にする。Python が無いときは `ManualCritique` が赤の一画と2行を返す。手順は [phase-14.md](phase-14.md)。
 
 API キーとアカウントは Keychain に置く。CloudKit や Firebase はこの契約に入れない。
 

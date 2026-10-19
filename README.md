@@ -2,7 +2,7 @@
 
 RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙の上に手本の線を重ね、書き終えた静止画をスマートフォン側で添削する。
 
-今あるのは **Phase 13（手本）** までです。640×480 の透過 HUD を 1280×480 の左右へ出し、グラスは `ShodoGhost` として広告します。iPhone アプリが接続し、撮影ボタンが `CAPTURE_NOW` を送ると、カメラ 0 を 1 枚開いて閉じます。その JPEG を iPhone のホットスポット越しに受け、画面に出します。そのあと赤の一画と2行を BLE でグラスへ返します。四隅を送ると、中央の十字とその内側へ赤線を置きます。「手本を送る」は永の外形を緑で同じ四隅へ置きます。撮影しても外形と十字は残ります。未送信の JPEG はメモリ 1 枚を再接続後に送り直します。確認用 Activity だけ、引き出すために `files/still.jpg` へ 1 枚書きます。iPhone 用の IPA は、GitHub の macOS で `xcodebuild` し、Windows の Sideloadly が署名して入れる。手順は [docs/cloud-ci.md](docs/cloud-ci.md)。
+今あるのは **Phase 14（半紙の四隅）** までです。640×480 の透過 HUD を 1280×480 の左右へ出し、グラスは `ShodoGhost` として広告します。iPhone アプリが接続し、撮影ボタンが `CAPTURE_NOW` を送ると、カメラ 0 を 1 枚開いて閉じます。その JPEG を iPhone のホットスポット越しに受け、画面に出します。明るい半紙らしいときは、その場の輝度から四隅を出して `CALIBRATE_COMMIT`（ワンショット）を送ります。見つからないときは、手で送った四隅を残します。そのあと赤の一画と2行を BLE でグラスへ返します。四隅を送ると、中央の十字とその内側へ赤線を置きます。「手本を送る」は永の外形を緑で同じ四隅へ置きます。撮影しても外形と十字は残ります。未送信の JPEG はメモリ 1 枚を再接続後に送り直します。確認用 Activity だけ、引き出すために `files/still.jpg` へ 1 枚書きます。iPhone 用の IPA は、GitHub の macOS で `xcodebuild` し、Windows の Sideloadly が署名して入れる。手順は [docs/cloud-ci.md](docs/cloud-ci.md)。
 
 ## このフェーズで固定したこと
 
@@ -33,6 +33,7 @@ RayNeo X3 / X3 Pro 向けの美文字・毛筆練習アシスタント。半紙�
 | [docs/phase-11.md](docs/phase-11.md) | 赤の一画と2行をグラスへ返す |
 | [docs/phase-12.md](docs/phase-12.md) | 手で合わせた四隅と中央の十字 |
 | [docs/phase-13.md](docs/phase-13.md) | 永の外形を緑で四隅の中へ |
+| [docs/phase-14.md](docs/phase-14.md) | 撮影 JPEG の輝度から半紙の四隅 |
 | [docs/cloud-ci.md](docs/cloud-ci.md) | GitHub Actions の Mac で IPA を作り、Sideloadly で入れる |
 | [docs/iphone.md](docs/iphone.md) | iPhone の BLE バックグラウンド、Wi-Fi、権限 |
 | [docs/spec-review.md](docs/spec-review.md) | 仕様書の見直し |

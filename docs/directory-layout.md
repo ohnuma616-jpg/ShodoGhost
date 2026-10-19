@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 13 まででリポジトリにあるもの:
+Phase 14 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -86,6 +86,8 @@ ios/Protocol/          Swift Package。符号器、PhoneSession、練習のバ�
   Sources/.../NwWifiListener.swift            実機の待受。全インターフェイス。Linux では空
   Sources/.../PracticeCoordinator.swift       前面ゲートと添削の順
   Sources/.../PracticeScreen.swift            SwiftUI。Linux では空
+  Sources/.../PaperFinder.swift               輝度から半紙の四隅。OpenCV は使わない
+  Tests/.../PaperFinderTests.swift            明るい矩形、真っ白、真っ暗
 fixtures/canonical.txt Kotlin が書いたバイト列。Swift が再符号化して一致を確認する
 ```
 
@@ -129,6 +131,7 @@ server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ば�
 | 10 | 済み | JPEG をホットスポット越しに iPhone の画面へ出す |
 | 11 | 済み | 赤の一画と2行を BLE でグラスへ返す。Python はまだ |
 | 12 | 済み | 手で合わせた四隅。中央の十字と、その中の赤線 |
-| 13 | ここ | 永の外形。緑で四隅の中。撮影しても残る |
+| 13 | 済み | 永の外形。緑で四隅の中。撮影しても残る |
+| 14 | ここ | 撮影 JPEG の輝度から四隅。ワンショットで CALIBRATE_COMMIT |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。
