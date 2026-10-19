@@ -311,6 +311,31 @@ class PracticeHudTest {
     }
 
     @Test
+    fun lessonFrameDrawsTheSkeletonInsideTheQuadAndTheRedStrokeOnTop() {
+        val exemplar = listOf(
+            Stroke(InkLayer.SKELETON, 2, listOf(PaperPoint(0, 4000), PaperPoint(Limits.NORM_MAX, 4000))),
+        )
+        val correction = listOf(
+            Stroke(InkLayer.CORRECTION, 2, listOf(PaperPoint(2000, 2000), PaperPoint(8000, 8000))),
+        )
+        val inset = PaperQuad(
+            HudPoint(2000, 2000),
+            HudPoint(8000, 2000),
+            HudPoint(8000, 8000),
+            HudPoint(2000, 8000),
+        )
+        val full = renderHud(lessonFrame(exemplar, emptyList(), listOf("手本")))
+        val fitted = renderHud(lessonFrame(exemplar, emptyList(), listOf("手本"), quad = inset, showCrosshair = false))
+        assertTrue(cyanMinX(fitted) > cyanMinX(full))
+        assertEquals(0, fitted.count(HudPalette.CORRECTION))
+        val review = renderHud(
+            lessonFrame(exemplar, correction, listOf("起筆を垂直に", "ハネを短く"), quad = inset, showCrosshair = true),
+        )
+        assertTrue(review.count(HudPalette.EXEMPLAR) > fitted.count(HudPalette.EXEMPLAR))
+        assertTrue(review.count(HudPalette.CORRECTION) > 0)
+    }
+
+    @Test
     fun insetQuadPullsTheRedStrokeInwardAndDrawsTheCrosshair() {
         val stroke = listOf(Stroke(InkLayer.CORRECTION, 2, listOf(PaperPoint(2000, 2000), PaperPoint(8000, 8000))))
         val full = renderHud(reviewFrame(stroke, listOf("起筆を垂直に")))
@@ -373,10 +398,14 @@ class PracticeHudTest {
         assertEquals(PaperProfile.HANSHI, hud.paper)
     }
 
-    private fun redMinX(bitmap: HudBitmap): Int {
+    private fun redMinX(bitmap: HudBitmap): Int = minX(bitmap, HudPalette.CORRECTION)
+
+    private fun cyanMinX(bitmap: HudBitmap): Int = minX(bitmap, HudPalette.EXEMPLAR)
+
+    private fun minX(bitmap: HudBitmap, color: Int): Int {
         var minX = HudCanvas.WIDTH
-        bitmap.pixels.forEachIndexed { index, color ->
-            if (color == HudPalette.CORRECTION) minX = minOf(minX, index % HudCanvas.WIDTH)
+        bitmap.pixels.forEachIndexed { index, pixel ->
+            if (pixel == color) minX = minOf(minX, index % HudCanvas.WIDTH)
         }
         return minX
     }

@@ -51,6 +51,29 @@ public final class PracticeCoordinator {
         )
     }
 
+    /// なぞりモードのあと、永の骨格を1パックで送る。撮影では消さない。
+    public func sendLesson() throws {
+        let strokes = try EiExemplar.strokes()
+        exemplarStrokes = strokes
+        exemplarId = EiExemplar.id
+        try session.setMode(.trace, paper: paper)
+        let points = strokes.reduce(0) { $0 + $1.points.count }
+        let meta = ExemplarMeta(
+            exemplarId: exemplarId,
+            strokeCount: strokes.count,
+            pointCount: points,
+            layerMask: InkLayer.skeleton.rawValue
+        )
+        let pack = try StrokePack(
+            exemplarOrCritiqueId: exemplarId,
+            packIndex: 0,
+            packCount: 1,
+            strokes: strokes,
+            correction: false
+        )
+        try session.sendExemplar(meta, packs: [pack])
+    }
+
     private func runBurst(_ ready: CaptureReady) throws {
         try session.showAdvice(["添削中"])
         do {

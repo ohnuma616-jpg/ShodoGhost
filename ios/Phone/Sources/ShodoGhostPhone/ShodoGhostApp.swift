@@ -38,6 +38,10 @@ struct CaptureView: View {
                 model.sendCorners()
             }
             .disabled(model.phase != .bleReady)
+            Button("手本を送る") {
+                model.sendLesson()
+            }
+            .disabled(model.phase != .bleReady)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(24)
@@ -52,6 +56,7 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
     private let session: PhoneSession
     private let photos = DispatchQueue(label: "dev.shodoghost.photo")
     private var receiving = false
+    private var lesson: [Stroke] = []
 
     init() {
         let radio = CoreBluetoothPhoneRadio()
@@ -81,6 +86,32 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
                 CalibrateCommit(method: .manual, quad: quad, widthMm: PaperProfile.hanshi.widthMm, heightMm: PaperProfile.hanshi.heightMm)
             )
             detail = "四隅を送りました"
+        } catch {
+            detail = "送れません"
+        }
+    }
+
+    func sendLesson() {
+        do {
+            let strokes = try EiExemplar.strokes()
+            try session.setMode(.trace, paper: .hanshi)
+            let points = strokes.reduce(0) { $0 + $1.points.count }
+            let meta = ExemplarMeta(
+                exemplarId: EiExemplar.id,
+                strokeCount: strokes.count,
+                pointCount: points,
+                layerMask: InkLayer.skeleton.rawValue
+            )
+            let pack = try StrokePack(
+                exemplarOrCritiqueId: EiExemplar.id,
+                packIndex: 0,
+                packCount: 1,
+                strokes: strokes,
+                correction: false
+            )
+            try session.sendExemplar(meta, packs: [pack])
+            lesson = strokes
+            detail = "手本を送りました"
         } catch {
             detail = "送れません"
         }
@@ -145,8 +176,8 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
                 let result = try ManualCritique().critique(
                     CritiqueRequest(
                         jpeg: jpeg,
-                        exemplarId: 1,
-                        strokes: [],
+                        exemplarId: EiExemplar.id,
+                        strokes: self.lesson,
                         paper: .hanshi,
                         widthMm: PaperProfile.hanshi.widthMm,
                         heightMm: PaperProfile.hanshi.heightMm

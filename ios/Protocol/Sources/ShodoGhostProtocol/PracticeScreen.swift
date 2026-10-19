@@ -27,6 +27,9 @@ public struct PracticeScreen: View {
             Button("書き終わり") {
                 try? practice.requestCapture()
             }
+            Button("手本を送る") {
+                try? practice.sendLesson()
+            }
             Button("画面の四隅を送る") {
                 do {
                     let quad = try PaperQuad(

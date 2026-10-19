@@ -12,6 +12,42 @@ import Testing
     #expect(WifiExchange.headerValue(header, "Sec-WebSocket-Key") == "abc+def=")
 }
 
+@Test func lessonSendsTheEiSkeletonInTrace() throws {
+    let radio = BurstRadio()
+    let session = PhoneSession(radio: radio)
+    session.scheduleRetry = { _, _ in }
+    let log = BurstLog()
+    session.delegate = log
+    session.start()
+    let practice = PracticeCoordinator(session: session, backend: ManualCritique(), link: ScriptedWifi())
+    try practice.sendLesson()
+    #expect(practice.exemplarId == EiExemplar.id)
+    #expect(practice.exemplarStrokes.count == 8)
+    #expect(practice.exemplarStrokes.allSatisfy { $0.layer == .skeleton && $0.widthPx == Limits.minLinePx })
+    #expect(practice.exemplarStrokes[0].points[0] == (try PaperPoint(x: 5000, y: 1500)))
+    var sent: [String] = []
+    for message in radio.commands {
+        switch message {
+        case .setMode(let mode):
+            #expect(mode.mode == .trace)
+            #expect(mode.paper == .hanshi)
+            sent.append("mode")
+        case .exemplarMeta(let meta):
+            #expect(meta.exemplarId == EiExemplar.id)
+            #expect(meta.strokeCount == 8)
+            #expect(meta.pointCount == 16)
+            sent.append("meta")
+        case .strokePack(let pack):
+            #expect(pack.correction == false)
+            #expect(pack.strokes.count == 8)
+            sent.append("stroke")
+        default:
+            break
+        }
+    }
+    #expect(sent == ["mode", "meta", "stroke"])
+}
+
 @Test func backgroundCaptureWaitsForThePracticeScreen() throws {
     let radio = BurstRadio()
     let session = PhoneSession(radio: radio)

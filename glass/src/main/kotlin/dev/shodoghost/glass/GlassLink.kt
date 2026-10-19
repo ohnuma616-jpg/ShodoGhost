@@ -47,6 +47,7 @@ class GlassLink(
     private val onWifi: (BeginWifiSession) -> Unit,
     private val adviceSink: (List<String>) -> Unit,
     private val correctionSink: (StrokePack) -> Unit,
+    private val exemplarSink: (StrokePack) -> Unit,
     private val cornerSink: (CalibrateCommit) -> Unit,
 ) {
     val session: GlassSession
@@ -92,7 +93,7 @@ class GlassLink(
                 }
 
                 override fun onStrokePack(pack: StrokePack) {
-                    if (pack.correction) correctionSink(pack)
+                    if (pack.correction) correctionSink(pack) else exemplarSink(pack)
                 }
 
                 override fun onCalibrateCommit(commit: CalibrateCommit) {

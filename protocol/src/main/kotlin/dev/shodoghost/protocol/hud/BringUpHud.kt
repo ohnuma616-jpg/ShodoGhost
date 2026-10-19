@@ -26,6 +26,29 @@ fun bringUpFrame(advice: List<String> = emptyList(), warning: String? = null): H
     )
 }
 
+/**
+ * 手本はシアン。添削が無ければなぞり、あればその上に赤線を置く。
+ * 四隅が無いときは用紙全体。届いた四隅があれば、その中へ線と中央十字を置く。
+ */
+fun lessonFrame(
+    exemplar: List<Stroke>,
+    corrections: List<Stroke>,
+    advice: List<String>,
+    warning: String? = null,
+    quad: PaperQuad? = null,
+    showCrosshair: Boolean = false,
+): HudFrame {
+    return HudFrame(
+        strokes = exemplar + corrections,
+        quad = quad ?: fullLens(),
+        advice = advice.take(Limits.MAX_ADVICE_LINES),
+        showCrosshair = showCrosshair,
+        warning = warning,
+        lineWidthPx = Limits.MIN_LINE_PX,
+        mode = if (corrections.isEmpty()) HudMode.TRACE else HudMode.REVIEW,
+    )
+}
+
 /** 四隅が無いときは用紙全体。届いた四隅があれば、その中へ赤線と中央十字を置く。 */
 fun reviewFrame(
     strokes: List<Stroke>,

@@ -20,7 +20,7 @@ import dev.shodoghost.protocol.camera.LegacyStillCapture
 import dev.shodoghost.protocol.hud.DeskMirrorPresenter
 import dev.shodoghost.protocol.hud.bringUpFrame
 import dev.shodoghost.protocol.hud.installHudGlyphs
-import dev.shodoghost.protocol.hud.reviewFrame
+import dev.shodoghost.protocol.hud.lessonFrame
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -39,6 +39,7 @@ class GlassActivity : Activity() {
     private var captureShown = false
     private var reviewAdvice: List<String> = emptyList()
     private var reviewStrokes: List<Stroke> = emptyList()
+    private var exemplarStrokes: List<Stroke> = emptyList()
     private var paperQuad: PaperQuad? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +56,7 @@ class GlassActivity : Activity() {
             onWifi = ::upload,
             adviceSink = ::advice,
             correctionSink = ::correction,
+            exemplarSink = ::exemplar,
             cornerSink = ::corners,
         )
         shot = GlassStillShot(link.session, LegacyStillCapture(stillCamera))
@@ -146,6 +148,17 @@ class GlassActivity : Activity() {
         }
     }
 
+    private fun exemplar(pack: StrokePack) {
+        runOnUiThread {
+            exemplarStrokes = if (pack.packIndex == 0) pack.strokes else exemplarStrokes + pack.strokes
+            if (reviewAdvice.isEmpty()) {
+                captureShown = true
+                bottom = "手本"
+            }
+            show(link.session.phase)
+        }
+    }
+
     private fun capture(request: CaptureNow) {
         runOnUiThread {
             captureShown = true
@@ -222,8 +235,12 @@ class GlassActivity : Activity() {
             phase != LinkPhase.WIFI_TEARDOWN
         val linkWarning = warning ?: if (disconnected) "未接続" else null
         val advice = if (reviewAdvice.isNotEmpty()) reviewAdvice else listOf(bottom)
-        val frame = if (paperQuad != null || reviewAdvice.isNotEmpty() || reviewStrokes.isNotEmpty()) {
-            reviewFrame(reviewStrokes, advice, linkWarning, paperQuad, paperQuad != null)
+        val lesson = paperQuad != null ||
+            reviewAdvice.isNotEmpty() ||
+            reviewStrokes.isNotEmpty() ||
+            exemplarStrokes.isNotEmpty()
+        val frame = if (lesson) {
+            lessonFrame(exemplarStrokes, reviewStrokes, advice, linkWarning, paperQuad, paperQuad != null)
         } else {
             bringUpFrame(advice = listOf(bottom), warning = linkWarning)
         }
