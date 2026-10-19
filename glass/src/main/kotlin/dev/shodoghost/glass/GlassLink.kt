@@ -124,10 +124,9 @@ class GlassLink(
         } else if (serviceReady) {
             advertise()
         }
-        if (session.phase == LinkPhase.IDLE || session.phase == LinkPhase.BACKOFF) {
-            session.startAdvertising()
-        }
-        publishPhase()
+        val began = session.phase == LinkPhase.IDLE || session.phase == LinkPhase.BACKOFF
+        if (began) session.startAdvertising()
+        if (began || !advertising) publishPhase()
     }
 
     fun stopAdvertising() {
@@ -237,6 +236,7 @@ class GlassLink(
             advertise()
         }
 
+        @SuppressLint("MissingPermission")
         override fun onConnectionStateChange(device: BluetoothDevice, status: Int, newState: Int) {
             Log.i(TAG, "link $newState status $status")
             if (newState == BluetoothProfile.STATE_CONNECTED) {
@@ -246,7 +246,12 @@ class GlassLink(
                     return
                 }
                 connected = device
-                noteBond(device)
+                if (device.bondState == BluetoothDevice.BOND_BONDED) {
+                    noteBond(device)
+                } else {
+                    onStatus("ペア待ち")
+                    if (device.bondState == BluetoothDevice.BOND_NONE) device.createBond()
+                }
             } else if (newState == BluetoothProfile.STATE_DISCONNECTED && connected?.address == device.address) {
                 connected = null
                 synchronized(notifyLock) {

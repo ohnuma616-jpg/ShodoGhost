@@ -68,6 +68,7 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
     private var replayLesson = false
     private var pendingReplay: StoredLesson?
     private var helloAttempts = 0
+    private var didReadSessionInfo = false
 
     public init(radio: PhoneRadio) {
         self.radio = radio
@@ -188,6 +189,7 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
         let events = absorb(bytes, assembler: statusIn)
         deliver(events)
         replayLessonIfNeeded()
+        readSessionInfoIfReady()
     }
 
     public func radioDidNotifyPayload(_ bytes: [UInt8]) {
@@ -230,9 +232,17 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
             return
         }
         lock.unlock()
+        sendHello()
+    }
+
+    private func readSessionInfoIfReady() {
+        lock.lock()
+        let ready = storedPhase == .bleReady && !didReadSessionInfo && !stopped
+        if ready { didReadSessionInfo = true }
+        lock.unlock()
+        guard ready else { return }
         radio.readSessionInfo { [weak self] bytes in
             self?.noteSessionInfo(bytes)
-            self?.sendHello()
         }
     }
 
@@ -264,7 +274,7 @@ public final class PhoneSession: PhoneRadioSink, @unchecked Sendable {
     /// 最初の HELLO_ACK が Notify の前に落ちても、同じノンスでもう一度書く。
     private func repeatHello() {
         lock.lock()
-        guard storedPhase == .negotiating, !stopped, helloAttempts < 4, nonce.count == Limits.nonceBytes else {
+        guard storedPhase == .negotiating, !stopped, helloAttempts < 30, nonce.count == Limits.nonceBytes else {
             lock.unlock()
             return
         }
