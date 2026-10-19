@@ -9,8 +9,10 @@ import android.util.Log
 import android.view.View
 import android.view.WindowManager
 import dev.shodoghost.protocol.BeginWifiSession
+import dev.shodoghost.protocol.CalibrateCommit
 import dev.shodoghost.protocol.CaptureNow
 import dev.shodoghost.protocol.LinkPhase
+import dev.shodoghost.protocol.PaperQuad
 import dev.shodoghost.protocol.Stroke
 import dev.shodoghost.protocol.StrokePack
 import dev.shodoghost.protocol.camera.GlassStillShot
@@ -37,6 +39,7 @@ class GlassActivity : Activity() {
     private var captureShown = false
     private var reviewAdvice: List<String> = emptyList()
     private var reviewStrokes: List<Stroke> = emptyList()
+    private var paperQuad: PaperQuad? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,6 +55,7 @@ class GlassActivity : Activity() {
             onWifi = ::upload,
             adviceSink = ::advice,
             correctionSink = ::correction,
+            cornerSink = ::corners,
         )
         shot = GlassStillShot(link.session, LegacyStillCapture(stillCamera))
         show(LinkPhase.IDLE)
@@ -115,6 +119,15 @@ class GlassActivity : Activity() {
             bottom = text
             Log.i(TAG, text)
             runCatching { File(filesDir, "link.txt").writeText(text) }
+            show(link.session.phase)
+        }
+    }
+
+    private fun corners(commit: CalibrateCommit) {
+        runOnUiThread {
+            paperQuad = commit.quad
+            captureShown = true
+            bottom = "四隅"
             show(link.session.phase)
         }
     }
@@ -208,8 +221,9 @@ class GlassActivity : Activity() {
             phase != LinkPhase.TRANSFER &&
             phase != LinkPhase.WIFI_TEARDOWN
         val linkWarning = warning ?: if (disconnected) "未接続" else null
-        val frame = if (reviewAdvice.isNotEmpty() || reviewStrokes.isNotEmpty()) {
-            reviewFrame(reviewStrokes, reviewAdvice, linkWarning)
+        val advice = if (reviewAdvice.isNotEmpty()) reviewAdvice else listOf(bottom)
+        val frame = if (paperQuad != null || reviewAdvice.isNotEmpty() || reviewStrokes.isNotEmpty()) {
+            reviewFrame(reviewStrokes, advice, linkWarning, paperQuad, paperQuad != null)
         } else {
             bringUpFrame(advice = listOf(bottom), warning = linkWarning)
         }

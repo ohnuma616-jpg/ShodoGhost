@@ -34,6 +34,10 @@ struct CaptureView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(model.phase != .bleReady)
+            Button("四隅を送る") {
+                model.sendCorners()
+            }
+            .disabled(model.phase != .bleReady)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(24)
@@ -60,6 +64,23 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
         do {
             try session.captureNow(.phone, quality: 90)
             detail = "撮影を送りました"
+        } catch {
+            detail = "送れません"
+        }
+    }
+
+    func sendCorners() {
+        do {
+            let quad = try PaperQuad(
+                topLeft: HudPoint(x: 1000, y: 1000),
+                topRight: HudPoint(x: 9000, y: 1000),
+                bottomRight: HudPoint(x: 9000, y: 9000),
+                bottomLeft: HudPoint(x: 1000, y: 9000)
+            )
+            try session.calibrateCommit(
+                CalibrateCommit(method: .manual, quad: quad, widthMm: PaperProfile.hanshi.widthMm, heightMm: PaperProfile.hanshi.heightMm)
+            )
+            detail = "四隅を送りました"
         } catch {
             detail = "送れません"
         }

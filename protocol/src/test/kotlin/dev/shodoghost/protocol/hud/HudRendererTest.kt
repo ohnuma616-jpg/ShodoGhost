@@ -311,6 +311,21 @@ class PracticeHudTest {
     }
 
     @Test
+    fun insetQuadPullsTheRedStrokeInwardAndDrawsTheCrosshair() {
+        val stroke = listOf(Stroke(InkLayer.CORRECTION, 2, listOf(PaperPoint(2000, 2000), PaperPoint(8000, 8000))))
+        val full = renderHud(reviewFrame(stroke, listOf("起筆を垂直に")))
+        val inset = PaperQuad(
+            HudPoint(2000, 2000),
+            HudPoint(8000, 2000),
+            HudPoint(8000, 8000),
+            HudPoint(2000, 8000),
+        )
+        val fitted = renderHud(reviewFrame(stroke, listOf("起筆を垂直に"), quad = inset, showCrosshair = true))
+        assertTrue(redMinX(fitted) > redMinX(full))
+        assertTrue(fitted.count(HudPalette.EXEMPLAR) > 0)
+    }
+
+    @Test
     fun reviewClickReturnsToTheLessonMode() {
         val hud = PracticeHud()
         hud.onAction(TouchAction.TRIPLE_CLICK, 0)
@@ -356,5 +371,13 @@ class PracticeHudTest {
         assertTrue(bitmap.pixels.all { it == HudPalette.UNLIT || it == HudPalette.CONTOUR || it == HudPalette.TEXT || it == HudPalette.EXEMPLAR })
         assertEquals(8, hud.lineWidthPx)
         assertEquals(PaperProfile.HANSHI, hud.paper)
+    }
+
+    private fun redMinX(bitmap: HudBitmap): Int {
+        var minX = HudCanvas.WIDTH
+        bitmap.pixels.forEachIndexed { index, color ->
+            if (color == HudPalette.CORRECTION) minX = minOf(minX, index % HudCanvas.WIDTH)
+        }
+        return minX
     }
 }

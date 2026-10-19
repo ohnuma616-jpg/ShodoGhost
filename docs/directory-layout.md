@@ -1,6 +1,6 @@
 # ディレクトリ
 
-Phase 11 まででリポジトリにあるもの:
+Phase 12 まででリポジトリにあるもの:
 
 ```text
 shodo-ghost/
@@ -127,6 +127,7 @@ server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ば�
 | 8 | 済み | `ShodoGhost` を広告し、`CAPTURE_NOW` で 1 枚撮る |
 | 9 | 済み | `ios/Phone`。撮影ボタンが `CAPTURE_NOW` を送る。iPhone へは Sideloadly |
 | 10 | 済み | JPEG をホットスポット越しに iPhone の画面へ出す |
-| 11 | ここ | 赤の一画と2行を BLE でグラスへ返す。Python はまだ |
+| 11 | 済み | 赤の一画と2行を BLE でグラスへ返す。Python はまだ |
+| 12 | ここ | 手で合わせた四隅。中央の十字と、その中の赤線 |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。

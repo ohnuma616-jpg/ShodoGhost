@@ -23,6 +23,7 @@ import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
 import dev.shodoghost.protocol.BeginWifiSession
+import dev.shodoghost.protocol.CalibrateCommit
 import dev.shodoghost.protocol.CaptureNow
 import dev.shodoghost.protocol.GattProfile
 import dev.shodoghost.protocol.StrokePack
@@ -46,6 +47,7 @@ class GlassLink(
     private val onWifi: (BeginWifiSession) -> Unit,
     private val adviceSink: (List<String>) -> Unit,
     private val correctionSink: (StrokePack) -> Unit,
+    private val cornerSink: (CalibrateCommit) -> Unit,
 ) {
     val session: GlassSession
     private val manager = context.getSystemService(BluetoothManager::class.java)
@@ -91,6 +93,10 @@ class GlassLink(
 
                 override fun onStrokePack(pack: StrokePack) {
                     if (pack.correction) correctionSink(pack)
+                }
+
+                override fun onCalibrateCommit(commit: CalibrateCommit) {
+                    cornerSink(commit)
                 }
             },
         )
