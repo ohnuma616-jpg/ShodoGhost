@@ -49,4 +49,4 @@ API キーとアカウントは Keychain に置く。CloudKit や Firebase は�
 
 文字入力、用紙の選択、手本一覧、撮影ボタンは SwiftUI 側だけに出す。グラスにキーボードは出さない。
 
-撮影ボタンは Command へ `CAPTURE_NOW`（理由は電話、JPEG 品質 90）を書く。テンプルの長押しは Touch の `LONG_PRESS` のまま。「手本を送る」は永の骨格を `STROKE_PACK` で書く。手順は [phase-13.md](phase-13.md)。
+撮影ボタンは Command へ `CAPTURE_NOW`（理由は電話、JPEG 品質 90）を書く。テンプルの長押しは Touch の `LONG_PRESS` のまま。「手本を送る」は永の外形を `STROKE_PACK` で書く。手順は [phase-13.md](phase-13.md)。

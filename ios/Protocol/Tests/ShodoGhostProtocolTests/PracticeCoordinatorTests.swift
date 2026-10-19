@@ -22,9 +22,9 @@ import Testing
     let practice = PracticeCoordinator(session: session, backend: ManualCritique(), link: ScriptedWifi())
     try practice.sendLesson()
     #expect(practice.exemplarId == EiExemplar.id)
-    #expect(practice.exemplarStrokes.count == 8)
-    #expect(practice.exemplarStrokes.allSatisfy { $0.layer == .skeleton && $0.widthPx == Limits.minLinePx })
-    #expect(practice.exemplarStrokes[0].points[0] == (try PaperPoint(x: 5000, y: 1500)))
+    #expect(practice.exemplarStrokes.count == 3)
+    #expect(practice.exemplarStrokes.allSatisfy { $0.layer == .contour && $0.widthPx == Limits.minLinePx })
+    #expect(practice.exemplarStrokes[0].points[0] == (try PaperPoint(x: 3536, y: 955)))
     var sent: [String] = []
     for message in radio.commands {
         switch message {
@@ -34,12 +34,12 @@ import Testing
             sent.append("mode")
         case .exemplarMeta(let meta):
             #expect(meta.exemplarId == EiExemplar.id)
-            #expect(meta.strokeCount == 8)
-            #expect(meta.pointCount == 16)
+            #expect(meta.strokeCount == 3)
+            #expect(meta.pointCount == 62)
             sent.append("meta")
         case .strokePack(let pack):
             #expect(pack.correction == false)
-            #expect(pack.strokes.count == 8)
+            #expect(pack.strokes.count == 3)
             sent.append("stroke")
         default:
             break
@@ -185,6 +185,7 @@ private final class BurstRadio: PhoneRadio, @unchecked Sendable {
     var commands: [LinkMessage] = []
     private var outSeq = 1
     private let lock = NSLock()
+    private let payloadAssembler = InboundAssembler()
 
     func prepare(mtu: Int, ready: @escaping (Int) -> Void) { ready(247) }
 
@@ -244,7 +245,7 @@ private final class BurstRadio: PhoneRadio, @unchecked Sendable {
 
     func writeTouch(_ value: [UInt8]) {}
     func writePayload(_ value: [UInt8]) {
-        guard case .message(let inbound) = InboundAssembler().push(value) else { return }
+        guard case .message(let inbound) = payloadAssembler.push(value) else { return }
         lock.lock()
         commands.append(inbound.message)
         lock.unlock()

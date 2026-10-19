@@ -100,7 +100,7 @@ final class CaptureModel: ObservableObject, PhoneSessionDelegate {
                 exemplarId: EiExemplar.id,
                 strokeCount: strokes.count,
                 pointCount: points,
-                layerMask: InkLayer.skeleton.rawValue
+                layerMask: InkLayer.contour.rawValue
             )
             let pack = try StrokePack(
                 exemplarOrCritiqueId: EiExemplar.id,

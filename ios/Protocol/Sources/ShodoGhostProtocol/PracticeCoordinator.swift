@@ -51,7 +51,7 @@ public final class PracticeCoordinator {
         )
     }
 
-    /// なぞりモードのあと、永の骨格を1パックで送る。撮影では消さない。
+    /// なぞりモードのあと、永の外形を1パックで送る。撮影では消さない。
     public func sendLesson() throws {
         let strokes = try EiExemplar.strokes()
         exemplarStrokes = strokes
@@ -62,7 +62,7 @@ public final class PracticeCoordinator {
             exemplarId: exemplarId,
             strokeCount: strokes.count,
             pointCount: points,
-            layerMask: InkLayer.skeleton.rawValue
+            layerMask: InkLayer.contour.rawValue
         )
         let pack = try StrokePack(
             exemplarOrCritiqueId: exemplarId,

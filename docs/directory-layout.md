@@ -129,6 +129,6 @@ server/             任意。Python、OpenCV、VLM。iPhone からのみ呼ば�
 | 10 | 済み | JPEG をホットスポット越しに iPhone の画面へ出す |
 | 11 | 済み | 赤の一画と2行を BLE でグラスへ返す。Python はまだ |
 | 12 | 済み | 手で合わせた四隅。中央の十字と、その中の赤線 |
-| 13 | ここ | 永の骨格。シアンで四隅の中。撮影しても残る |
+| 13 | ここ | 永の外形。緑で四隅の中。撮影しても残る |
 
 Phase 2 は新しいパケットを増やしていない。グラスは Kotlin の `Protocol.encode`、iPhone は Swift の `Protocol.encode` を Characteristic の書き込みと Notify に接続する。
